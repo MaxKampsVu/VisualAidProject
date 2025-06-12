@@ -1,5 +1,7 @@
 SpeechRecognition
 gTTS
 pyaudio
+nameparser
+spacy
 
 
