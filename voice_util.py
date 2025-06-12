@@ -56,7 +56,7 @@ def say(message):
     message_obj.save("message.mp3")
     os.system(f"{audio_player} message.mp3")
 
-def get_user_input(input_type):
+def get_user_input(input_type): # TODO: Add another argument here for a help message
     """
     Get user input from voice, the input is extracted based on user_input_type
     :param input_type:
