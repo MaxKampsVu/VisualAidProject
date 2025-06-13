@@ -7,7 +7,7 @@ import util
 audio_player = "mpv" #TODO: Specify the cmd audio player for your operating system
 ''' config for speech recognition '''
 r = sr.Recognizer()
-duration = 5 # record time in seconds
+duration = 3 # record time in seconds
 ''' config for gTTS (audio output) '''
 language = 'en'
 ''' config for LLM '''
