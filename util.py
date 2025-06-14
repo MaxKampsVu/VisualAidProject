@@ -35,18 +35,27 @@ class INPUT_TYPE(Enum):
 def extract_firstname(text):
     doc = nlp(text)
     person = next((ent.text for ent in doc.ents if ent.label_ == "PERSON"), None)
+    if person is None:
+        print("[Warning] Spacey did not recognize answer.")
+        return None
     name = HumanName(person)
     return name.first
 
 def extract_surname(text):
     doc = nlp(text)
     person = next((ent.text for ent in doc.ents if ent.label_ == "PERSON"), None)
+    if person is None:
+        print("[Warning] Spacey did not recognize answer.")
+        return None
     name = HumanName(person)
     return name.surnames
 
 def extract_place(text):
     doc = nlp(text)
-    return next((ent.text for ent in doc.ents if ent.label_ == "GPE"), None)
+    place = next((ent.text for ent in doc.ents if ent.label_ == "GPE"), None)
+    if place is None:
+        print("[Warning] Spacey did not recognize answer.")
+    return place
 
 def extract(input_type, text):
     match input_type:

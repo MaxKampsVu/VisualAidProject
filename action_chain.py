@@ -4,6 +4,7 @@ import voice_util as vu
 class Action:
     _prev_action = None
     _next_action = None
+    _action_completed = False
 
     _prompt_user_text = None
     _prompt_user_side_effect_func = None
@@ -11,25 +12,21 @@ class Action:
     _categories_side_effect_func = None
     _user_input_type = None
     _user_input_side_effect_func = None
-    _help_message = None
-    _help_message_side_effect_func = None
-    _HELP = "help, no understanding"
     _confirm_user_input_message = None
 
-    _RETURN = "take me to the previous field"
-    _PROCEED = "continue"
-    _navigation_categories = [_RETURN, _PROCEED]
-
-    _CORRECT = "yes"
-    _WRONG = "no"
-    _confirmation_categories = [_CORRECT, _WRONG]
+    _YES = "yes"
+    _NO = "no"
+    _confirmation_categories = [_YES, _NO]
 
 
     # public methods
 
     def __init__(self, prev_action):
         self._prev_action = prev_action
-    
+
+    def get_prompt_user_text(self):
+        return self._prompt_user_text
+
     def add_prev_action(self, prev_action):
         self._prev_action = prev_action
     
@@ -62,47 +59,48 @@ class Action:
         """
         self._confirm_user_input_message = message
 
-    def add_help(self, message):
-        """
-        If the user asks for help, play message
-        :param message: e.g. "A BSN is bla bla bla, you need to give me an 8 digit number"
-        :return:
-        """
-        self._help_message = message
+    def _get_navigation_input(self, message):
+        self._execute_conditional(message, vu.say)
+        return self._execute_conditional(self._confirmation_categories, vu.categorize_user_input,
+                                                self._categories_side_effect_func)
 
     def run(self):
+
         """
         Execute the action
         :return:
         """
-        user_confirmation = self._WRONG
+
+        user_confirmation = self._NO
         # Prompts the user with a question until they have confirmed, that they have been understood correctly
-        while user_confirmation == self._WRONG:
+        while user_confirmation == self._NO:
+            # Prompt user with action they need to perform
             self._execute_conditional(self._prompt_user_text, vu.say)
+
+            # Prompt user if they want to skip the action if they have completed it before
+            # if self._action_completed:
+            #    skip = self._get_navigation_input("You have completed this action already, do you want to skip it?")
+            #    if skip == self._YES:
+            #        break
+
+            # Get the user answer
             input_text = self._execute_conditional(self._user_input_type, vu.get_user_input, self._user_input_side_effect_func)
 
-            self._execute_conditional(self._confirm_user_input_message + input_text, vu.say)
-            user_confirmation = self._execute_conditional(self._confirmation_categories, vu.categorize_user_input)
-            if user_confirmation == self._WRONG:
+            # Confirm user answers
+            user_confirmation = self._get_navigation_input(self._confirm_user_input_message + input_text)
+            if user_confirmation == self._NO:
                 self._execute_conditional("Sorry, lets try that again", vu.say)
 
-        # Continue with the application
-        self._execute_conditional("Splendid. Lets continue.", vu.say)
+        #if self._prev_action is not None:
+        #    user_confirmation = self._get_navigation_input(f"Would you like to return to the previous action? It was: {self._prev_action.get_prompt_user_text()}")
+        #    if user_confirmation == self._YES:
+        #        self._execute_conditional("Okay, lets take one step back", vu.say)
+        #        self._prev_action.run()
 
-        # TODO: Figure out a natural way to move between question
-        '''
-        self._execute_conditional("Do you want to continue the application or return to the previous field?")
-        user_action = self._execute_conditional(self._navigation_categories, vu.categorize_user_input, self._categories_side_effect_func)
-        
-        if user_action == self._RETURN:
-            if self._prev_action is None:
-                self._execute_conditional("Sorry, this is the first field. Lets continue with the next field", vu.say)
-            else:
-                self._prev_action.run()
-        '''
-
-        # Ececute the next action
+        # Continue with the next action
         if self._next_action is not None:
+            self._execute_conditional("Splendid. Lets continue.", vu.say)
+            self._action_completed = True
             self._next_action.run()
 
     # private methods

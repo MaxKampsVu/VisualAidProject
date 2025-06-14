@@ -3,6 +3,8 @@ from gtts import gTTS
 import os
 import requests
 import util
+import platform
+import traceback
 
 audio_player = "mpv" #TODO: Specify the cmd audio player for your operating system
 ''' config for speech recognition '''
@@ -52,11 +54,13 @@ def say(message):
     :param message:
     :return:
     """
+    print("Talking... ")
     message_obj = gTTS(text=message, lang=language, slow=False)
     message_obj.save("message.mp3")
-    os.system(f"{audio_player} message.mp3")
+    null_device = "nul" if platform.system() == "Windows" else "/dev/null" # Redirect audio_player console printing
+    os.system(f"{audio_player} message.mp3 > {null_device} 2>&1")
 
-def get_user_input(input_type): # TODO: Add another argument here for a help message
+def get_user_input(input_type):
     """
     Get user input from voice, the input is extracted based on user_input_type
     :param input_type:
@@ -64,52 +68,86 @@ def get_user_input(input_type): # TODO: Add another argument here for a help mes
     """
     # Record user request
     user_input = None
+    r = sr.Recognizer()
+
     while user_input is None:
-        with sr.Microphone() as source:
-            r.adjust_for_ambient_noise(source, duration=0.25)
-            print("Listening...")
-            audio_text = r.record(source, duration=duration)
-            print("Time over")
-            try:
-                user_input = r.recognize_google(audio_text)
-                user_input = util.extract(input_type, user_input)
-                break
-            except:
-                # TODO: Here it would be nice if we can prompt the user if they need help with the question
-                # TODO: maybe passing the help string to the function in action_chain
-                say("I didn't get that, please repeat")
+        try:
+            with sr.Microphone() as source:
+                r.adjust_for_ambient_noise(source, duration=0.25)
+                print("Listening...")
+                audio_text = r.record(source, duration=3)  # You can adjust this duration
+
+            print("Processing input...")
+            spoken_text = r.recognize_google(audio_text)
+            print(f"Recorded user input: {spoken_text}")
+
+            user_input = util.extract(input_type, spoken_text)
+            print(f"Extracted input: '{user_input}' for type '{input_type}'")
+
+        except sr.UnknownValueError:
+            print("[Warning] Could not understand the audio.")
+        except sr.RequestError as e:
+            print("[Error] Could not reach the speech recognition service.")
+            print(f"Details: {e}")
+        except Exception as e:
+            print("[Unexpected Error] while processing user input:")
+            traceback.print_exc()
+        if user_input is None:
+            say("I didn't understand that. Please try again.")
+
     return user_input
 
-# TODO: remove categorize_user_input?
-# Categorize user input essentially does the same as get_user_input. It just gives a bit more control by allowing
-# us to specify a category list. Should we remove this function?
 def categorize_user_input(categories):
     """
-    Categorize the user input from voice based on
-    :param categories: a string list of categories
-    :return:
-    """
-    # Record user request
-    category = None
-    while category is None:
-        with sr.Microphone() as source:
-            r.adjust_for_ambient_noise(source, duration=0.25)
-            print("Listening...")
-            audio_text = r.record(source, duration=duration)
-            print("Time over")
+    Categorize the user input from voice using LLM and a list of predefined categories.
 
+    :param categories: list[str] - predefined category options
+    :return: str - the matched category
+    """
+    category = None
+    r = sr.Recognizer()
+
+    while category is None:
         try:
-            user_request = r.recognize_google(audio_text)
-            print(f"Recorded user request: {user_request}")
-            llm_reply = _make_llm_request(f"Which category from {categories} fits the sentence: '{user_request}' the best? Answer only with the category that matches")
-            print(f"LLM categorized the user request as: {llm_reply}")
+            with sr.Microphone() as source:
+                r.adjust_for_ambient_noise(source, duration=0.25)
+                print("Listening...")
+                audio_text = r.record(source, duration=3)  # same duration as get_user_input
+
+            print("Processing input...")
+            user_input = r.recognize_google(audio_text)
+            print(f"Recorded user input: {user_input}")
+
+            prompt = (
+                f"Which category from the list {categories} fits the sentence: "
+                f"'{user_input}' the best? Only reply with the matching category name."
+            )
+            llm_reply = _make_llm_request(prompt)
+            print(f"LLM categorized the input as: {llm_reply}")
+
             category = _contains_word(llm_reply, categories)
-        except:
-            print("Couldn't tts or categorize user request")
+
+        except sr.UnknownValueError:
+            print("[Warning] Could not understand the audio.")
+        except sr.RequestError as e:
+            print("[Error] Could not reach the speech recognition service.")
+            print(f"Details: {e}")
+        except Exception as e:
+            print("[Unexpected Error] while categorizing user input:")
+            traceback.print_exc()
 
         if category is None:
-            say("I didn't get that, please repeat")
+            say("I didn't understand that. Please try again.")
+
     return category
+
+
+
+try:
+    response = requests.get("http://localhost:1234", timeout=2)
+    print("[SUCCESS] LM studio online")
+except requests.RequestException:
+    print("[ERROR] Couldn't reach LM studio, did you start it?")
 
 
 
