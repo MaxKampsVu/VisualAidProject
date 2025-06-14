@@ -1,6 +1,7 @@
 from nameparser import HumanName
 import spacy
 from enum import Enum
+import re
 
 # TODO: download small English language model: python -m spacy download en_core_web_sm
 nlp = spacy.load("en_core_web_sm")
@@ -31,6 +32,7 @@ class INPUT_TYPE(Enum):
     FIRSTNAME = 0
     SURNAME = 1
     PLACE = 2
+    SPELLING = 3
 
 def extract_firstname(text):
     doc = nlp(text)
@@ -57,6 +59,13 @@ def extract_place(text):
         print("[Warning] Spacey did not recognize answer.")
     return place
 
+def extract_spelling(text):
+    match = re.search(r'\b(?:[A-Za-z]\s+){1,}[A-Za-z]\b', text)
+    if match:
+        letters = match.group().split()
+        return ''.join(letters).lower()
+    return None
+
 def extract(input_type, text):
     match input_type:
         case INPUT_TYPE.FIRSTNAME:
@@ -65,6 +74,8 @@ def extract(input_type, text):
             return extract_surname(text)
         case INPUT_TYPE.PLACE:
             return extract_place(text)
+        case INPUT_TYPE.SPELLING:
+            return extract_spelling(text)
     return None
 
 

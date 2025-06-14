@@ -9,7 +9,11 @@ import traceback
 audio_player = "mpv" #TODO: Specify the cmd audio player for your operating system
 ''' config for speech recognition '''
 r = sr.Recognizer()
-duration = 3 # record time in seconds
+pause_threshold_spelling = 2.0 # pauses between words when spelling
+pause_threshold_normal = 1.0 # pauses between words for normal sentences
+timeout = 3 # wait time until user speaks
+phrase_time_limit = 20 # maximum record time
+duration = 5 # record time in seconds
 ''' config for gTTS (audio output) '''
 language = 'en'
 ''' config for LLM '''
@@ -47,6 +51,16 @@ def _contains_word(text, word_list):
     return None
 
 ### Methods to get speak to the user and get input from user voice
+def _record_user(input_type):
+    if input_type == util.INPUT_TYPE.SPELLING:
+        r.pause_threshold = pause_threshold_spelling
+    else:
+        r.pause_threshold = pause_threshold_normal
+
+    with sr.Microphone() as source:
+        r.adjust_for_ambient_noise(source, duration=0.25)
+        print("Listening...")
+        return r.listen(source, timeout=timeout, phrase_time_limit=phrase_time_limit)
 
 def say(message):
     """
@@ -60,6 +74,8 @@ def say(message):
     null_device = "nul" if platform.system() == "Windows" else "/dev/null" # Redirect audio_player console printing
     os.system(f"{audio_player} message.mp3 > {null_device} 2>&1")
 
+
+
 def get_user_input(input_type):
     """
     Get user input from voice, the input is extracted based on user_input_type
@@ -72,10 +88,7 @@ def get_user_input(input_type):
 
     while user_input is None:
         try:
-            with sr.Microphone() as source:
-                r.adjust_for_ambient_noise(source, duration=0.25)
-                print("Listening...")
-                audio_text = r.record(source, duration=3)  # You can adjust this duration
+            audio_text = _record_user(input_type)
 
             print("Processing input...")
             spoken_text = r.recognize_google(audio_text)
@@ -84,6 +97,8 @@ def get_user_input(input_type):
             user_input = util.extract(input_type, spoken_text)
             print(f"Extracted input: '{user_input}' for type '{input_type}'")
 
+        except sr.WaitTimeoutError:
+            print("[Timeout] No speech detected within the timeout period.")
         except sr.UnknownValueError:
             print("[Warning] Could not understand the audio.")
         except sr.RequestError as e:
@@ -109,10 +124,7 @@ def categorize_user_input(categories):
 
     while category is None:
         try:
-            with sr.Microphone() as source:
-                r.adjust_for_ambient_noise(source, duration=0.25)
-                print("Listening...")
-                audio_text = r.record(source, duration=3)  # same duration as get_user_input
+            audio_text = _record_user(None)
 
             print("Processing input...")
             user_input = r.recognize_google(audio_text)
