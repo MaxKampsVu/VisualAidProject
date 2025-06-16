@@ -87,7 +87,7 @@ class Action:
             input_text = self._execute_conditional(self._user_input_type, vu.get_user_input, self._user_input_side_effect_func)
 
             # Confirm user answers
-            user_confirmation = self._get_navigation_input(self._confirm_user_input_message + input_text)
+            user_confirmation = self._get_navigation_input(self._confirm_user_input_message + str(input_text))
             if user_confirmation == self._NO:
                 self._execute_conditional("Sorry, lets try that again", vu.say)
 
