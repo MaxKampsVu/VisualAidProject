@@ -8,7 +8,6 @@ if __name__ == '__main__':
 
     ########## Task 2: Finding nearest bin ########### 
     user_data = collect_user_data()
-    say("Running the calculation now.")
     result = run_calculation(user_data)
     say(result)
     print("Result:", result)

@@ -50,30 +50,30 @@ def collect_user_data() -> Dict[str, Any]:
     say("Welcome to the Dutch Waste container map. Let’s collect just a few details to run the calculation.")
     data: dict[str, any] = {}
 
-    # # — Ask for Address — ----------------------------------------------------
-    # address: int | None = None
-    # def store_year(v):
-    #     nonlocal address
-    #     address = v
-    #     data["address"] = address
-    #     print(f"[DEBUG] Stored street: {address}")
+    # — Ask for Address — ----------------------------------------------------
+    address: int | None = None
+    def store_year(v):
+        nonlocal address
+        address = v
+        data["address"] = address
+        print(f"[DEBUG] Stored street: {address}")
 
-    # h = action_chain.add_action()
-    # h.add_prompt_user("What is the name of your street?")
-    # h.add_get_user_input(util.INPUT_TYPE.SPELLING, address)
-    # h.add_confirm_user_input("Did I understand you correctly, the name of your street is ")
+    h = action_chain.add_action()
+    h.add_prompt_user("Please spell the name of your street?")
+    h.add_get_user_input(util.INPUT_TYPE.SPELLING, address)
+    h.add_confirm_user_input("Did I understand you correctly, the name of your street is ")
     
-    # stNumber: int | None = None
-    # def store_stNumber(v):
-    #     nonlocal stNumber
-    #     stNumber = v
-    #     data["address"] = data.get("address", "") + f" {stNumber}"
-    #     print(f"[DEBUG] Stored house number: {stNumber}")
+    stNumber: int | None = None
+    def store_stNumber(v):
+        nonlocal stNumber
+        stNumber = v
+        data["address"] = data.get("address", "") + f" {stNumber}"
+        print(f"[DEBUG] Stored house number: {stNumber}")
 
-    # h = action_chain.add_action()
-    # h.add_prompt_user("What is your house number?")
-    # h.add_get_user_input(util.INPUT_TYPE.NUMBER, store_stNumber)
-    # h.add_confirm_user_input("Did I understand you correctly, your house number is ")
+    h = action_chain.add_action()
+    h.add_prompt_user("What is your house number?")
+    h.add_get_user_input(util.INPUT_TYPE.NUMBER, store_stNumber)
+    h.add_confirm_user_input("Did I understand you correctly, your house number is ")
 
     #  # — Ask for container type — ----------------------------------------------------
     # container: int | None = None
@@ -89,9 +89,9 @@ def collect_user_data() -> Dict[str, Any]:
     # h.add_confirm_user_input("Did I understand you correctly, the container type you want to find is ")
 
     # fill dummy data for testing
-    data["address"] = "Cornelis Lelylaan 3"
     data["container"] = residual  # Default to residual waste
     say(f"Thanks. I will now search for the nearest waste container for {data['container']} at {data['address']}.")
+    
     action_chain.run()
 
     return data
@@ -176,11 +176,9 @@ def find_bin(driver: webdriver.Chrome, data: Dict[str, Any]) -> str:
         poi_markers = [marker for marker in markers if "marker-poi-wrapper" in marker.get_attribute("class")]
         clusters = [marker for marker in markers if "marker-cluster-wrapper" in marker.get_attribute("class")]
 
-    # Click on the first marker-poi-wrapper found
     first_marker = poi_markers[0]
     first_marker.click()
 
-    # Find div with class feature-digital-item and click it
     feature_div = wait.until(EC.presence_of_element_located((By.CLASS_NAME, "feature-digital-item__link")))
     href = feature_div.get_attribute("href")
     
@@ -193,18 +191,14 @@ def find_bin(driver: webdriver.Chrome, data: Dict[str, Any]) -> str:
 
     time.sleep(2)
 
-    # The third button in the page and click it
     third_button = wait.until(EC.element_to_be_clickable((By.XPATH, "(//button)[3]")))
     third_button.click()
 
     time.sleep(2)
 
-    # Find the second input with class name tactile-searchbox-input and get its aria-label attribute
     address_element = wait.until(EC.presence_of_element_located((By.XPATH, "(//input[@class='tactile-searchbox-input'])[2]")))
     address_text = address_element.get_attribute("aria-label")
-    #remove the text "Bestemming" from the address_text
-    address_text = re.sub(r"^Bestemming\s*:\s*", "", address_text).strip()
-
+    address_text = address_text.replace("Bestemming", "").strip()
     return f"The nearest waste container for {data['container']} is located at {address_text}."
 # ------------------------------------------------------------------
 #   Translate & run
