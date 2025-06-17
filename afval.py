@@ -199,11 +199,13 @@ def find_bin(driver: webdriver.Chrome, data: Dict[str, Any]) -> str:
 
     time.sleep(2)
 
-    # Find div with id 
-    scene_div = driver.find_element(By.ID, "sb_ifc51")
-    result = scene_div.text.strip()
-    print(f"[DEBUG] Result: {result}")
+    # Find the second input with class name tactile-searchbox-input and get its aria-label attribute
+    address_element = wait.until(EC.presence_of_element_located((By.XPATH, "(//input[@class='tactile-searchbox-input'])[2]")))
+    address_text = address_element.get_attribute("aria-label")
+    #remove the text "Bestemming" from the address_text
+    address_text = re.sub(r"^Bestemming\s*:\s*", "", address_text).strip()
 
+    return f"The nearest waste container for {data['container']} is located at {address_text}."
 # ------------------------------------------------------------------
 #   Translate & run
 # ------------------------------------------------------------------
