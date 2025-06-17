@@ -23,7 +23,6 @@ if __name__ == '__main__':
     # action_handle.add_get_user_input(util.INPUT_TYPE.PLACE, print)
     # action_handle.add_confirm_user_input("Did I understand you correctly, your live in")
 
-
     action_chain.run()
 
 

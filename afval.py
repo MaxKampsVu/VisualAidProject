@@ -226,8 +226,8 @@ def run_calculation(data: Dict[str, Any]) -> str:
         WebDriverWait(driver, DEFAULT_TIMEOUT).until(
             EC.presence_of_element_located((By.ID, "map"))
         )
-        result_nl = find_bin(driver, data)
-        return translate_to_english(result_nl)
+        result = find_bin(driver, data)
+        return result
     finally:
         time.sleep(3)
         driver.quit()
