@@ -8,4 +8,7 @@ webdriver-manager
 googletrans
 requests
 python-dotenv
+python-dateutil
+pycountry
+word2number
 
