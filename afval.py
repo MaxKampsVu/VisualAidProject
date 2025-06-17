@@ -75,23 +75,23 @@ def collect_user_data() -> Dict[str, Any]:
     h.add_get_user_input(util.INPUT_TYPE.NUMBER, store_stNumber)
     h.add_confirm_user_input("Did I understand you correctly, your house number is ")
 
-    #  # — Ask for container type — ----------------------------------------------------
-    # container: int | None = None
-    # def store_container(v):
-    #     nonlocal container
-    #     container = v
-    #     data["container"] = int("1249" + str(container)) if container in {1, 2, 3, 4, 5, 6, 7} else [12491, 12492, 12493, 12495, 12496, 12497, 13698]
-    #     print(f"[DEBUG] Stored container type: {container}")
+     # — Ask for container type — ----------------------------------------------------
+    container: int | None = None
+    def store_container(v):
+        nonlocal container
+        container = v
+        data["container"] = int("1249" + str(container)) if container in {1, 2, 3, 4, 5, 6, 7} else [12491, 12492, 12493, 12495, 12496, 12497, 13698]
+        print(f"[DEBUG] Stored container type: {container}")
 
-    # h = action_chain.add_action()
-    # h.add_prompt_user("What is the container type you want to find? Say 1 for residual waste, 2 for glass, 3 for paper, 4 for textile containers, 5 for textile collection, 6 for organic waste, or 7 for bread and pastry waste.")
-    # h.add_get_user_input(util.INPUT_TYPE.NUMBER, store_container)
-    # h.add_confirm_user_input("Did I understand you correctly, the container type you want to find is ")
+    h = action_chain.add_action()
+    h.add_prompt_user("What is the container type you want to find? Say 1 for residual waste, 2 for glass, 3 for paper, 4 for textile containers, 5 for textile collection, 6 for organic waste, or 7 for bread and pastry waste.")
+    h.add_get_user_input(util.INPUT_TYPE.NUMBER, store_container)
+    h.add_confirm_user_input("Did I understand you correctly, the container type you want to find is ")
 
     # fill dummy data for testing
     data["container"] = residual  # Default to residual waste
     say(f"Thanks. I will now search for the nearest waste container for {data['container']} at {data['address']}.")
-    
+
     action_chain.run()
 
     return data
