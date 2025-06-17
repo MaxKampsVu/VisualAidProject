@@ -6,7 +6,7 @@ import util
 import platform
 import traceback
 
-audio_player = "mpv" #TODO: Specify the cmd audio player for your operating system
+audio_player = "afplay" #TODO: Specify the cmd audio player for your operating system - afplay
 ''' config for speech recognition '''
 r = sr.Recognizer()
 pause_threshold_spelling = 2.0 # pauses between words when spelling
@@ -152,7 +152,6 @@ def categorize_user_input(categories):
             say("I didn't understand that. Please try again.")
 
     return category
-
 
 
 try:
