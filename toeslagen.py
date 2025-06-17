@@ -112,7 +112,7 @@ def collect_user_data() -> dict[str, any]:
     h = action_chain.add_action()
     h.add_prompt_user("Do you have more than €37,395 in savings on the 1st of January in that year?")
     h.add_get_user_input(util.INPUT_TYPE.YES_NO, store_savings)
-    h.add_confirm_user_input("Did I understand you correctly, your savings answer is ")
+    h.add_confirm_user_input("Did I understand you correctly, your answer to this question is ")
 
     action_chain.run()
 
@@ -172,86 +172,194 @@ def fill_form(driver: webdriver.Chrome, data: Dict[str, Any]):
     wait = WebDriverWait(driver, aDEFAULT_TIMEOUT)
 
     # 0) Year --------------------------------------------------------------
-    safe_select_by_value(Select(wait.until(EC.presence_of_element_located((By.ID, "V1-1_pbt")))), data["year"])
+    try: 
+        safe_select_by_value(Select(wait.until(EC.presence_of_element_located((By.ID, "V1-1_pbt")))), data["year"])
+    except Exception as e:
+        print(f"[WARN] Year selection failed: {e}")
 
     # only Huurtoeslag checked
-    huur = driver.find_element(By.ID, "V1-3_pbt_1")
-    if not huur.is_selected():
-        huur.click()
+    try: 
+        huur = driver.find_element(By.ID, "V1-3_pbt_1")
+        if not huur.is_selected():
+            huur.click()
+    except Exception as e:
+        print(f"[WARN] Huurtoeslag checkbox selection failed: {e}")
 
     # 1) Partner ----------------------------------------------------------
-    click_yes_no(wait, "V2-1_pbt", data["has_partner"])
+    try:
+        click_yes_no(wait, "V2-1_pbt", data["has_partner"])
+    except Exception as e:
+        print(f"[WARN] Partner selection failed: {e}")
 
     # 2) Applicant birthday & country ------------------------------------
-    fill_date(driver, "V2-3_pbt", (data["birth_day"], data["birth_month"], data["birth_year"]))
-    safe_select_by_value(Select(driver.find_element(By.ID, "V2-11_pbt")), data["country"])
+    try:
+        fill_date(driver, "V2-3_pbt", (data["birth_day"], data["birth_month"], data["birth_year"]))
+    except Exception as e:
+        print(f"[WARN] Applicant birthday selection failed: {e}")
+
+    try:
+        safe_select_by_value(Select(driver.find_element(By.ID, "V2-11_pbt")), data["country"])
+    except Exception as e:
+        print(f"[WARN] Applicant country selection failed: {e}")
 
     # 3) Applicant income --------------------------------------------------
-    driver.find_element(By.ID, "V3-10_pbt").send_keys(data["annual_income"])
+    try:
+        driver.find_element(By.ID, "V3-10_pbt").send_keys(data["annual_income"])
+    except Exception as e:
+        print(f"[WARN] Applicant income entry failed: {e}")
 
     # 4) Partner section ---------------------------------------------------
     if data["has_partner"]:
-        fill_date(driver, "V4-2_pbt", (data["partner_birth_day"], data["partner_birth_month"], data["partner_birth_year"]))
-        click_yes_no(wait, "V4-3_pbt", data["same_address"])
+        try:
+            fill_date(driver, "V4-2_pbt", (data["partner_birth_day"], data["partner_birth_month"], data["partner_birth_year"]))
+        except Exception as e:
+            print(f"[WARN] Partner birthday selection failed: {e}")
+        try:
+            click_yes_no(wait, "V4-3_pbt", data["same_address"])
+        except Exception as e:
+            print(f"[WARN] Partner same address selection failed: {e}")
+        
         if data["same_address"]:
-            driver.find_element(By.ID, "V4-25_pbt").send_keys(data["partner_income"])
+            try:
+                driver.find_element(By.ID, "V4-25_pbt").send_keys(data["partner_income"])
+            except Exception as e:
+                print(f"[WARN] Partner income entry failed: {e}")
         else:
-            safe_select_by_value(Select(driver.find_element(By.ID, "V4-4_pbt")), data["partner_country"])
+            try:
+                safe_select_by_value(Select(driver.find_element(By.ID, "V4-4_pbt")), data["partner_country"])
+            except Exception as e:
+                print(f"[WARN] Partner country selection failed: {e}")
 
     # 5) Children ----------------------------------------------------------
-    click_yes_no(wait, "V6-1_pbt", data["has_children"])
+    try:
+        click_yes_no(wait, "V6-1_pbt", data["has_children"])
+    except Exception as e:
+        print(f"[WARN] Children selection failed: {e}")
+    
     if data["has_children"]:
-        click_yes_no(wait, "V6-3_pbt", data["co_parent"])
-        Select(driver.find_element(By.ID, "V6-4_pbt")).select_by_value(str(data["num_children"]))
+        try:
+            click_yes_no(wait, "V6-3_pbt", data["co_parent"])
+        except Exception as e:
+            print(f"[WARN] Co-parent selection failed: {e}")
+        try:
+            Select(driver.find_element(By.ID, "V6-4_pbt")).select_by_value(str(data["num_children"]))
+        except Exception as e:
+            print(f"[WARN] Children number selection failed: {e}")
+
         for idx, bday in enumerate(data["children_birthdays"], start=1):
-            fill_date(driver, f"V6-5-{idx}_pbt", bday)
-            wait_click(wait, (By.ID, f"V6-13-{idx}_pbt_0"))  
-            wait_click(wait, (By.ID, f"V6-14-{idx}_pbt_False"))  
-            driver.find_element(By.ID, f"V6-15-{idx}_pbt").send_keys("0")
+            try:
+                fill_date(driver, f"V6-5-{idx}_pbt", bday)
+            except Exception as e:
+                print(f"[WARN] Child birthday selection failed: {e}")
+            try:
+                wait_click(wait, (By.ID, f"V6-13-{idx}_pbt_0"))
+            except Exception as e:
+                print(f"[WARN] Child co-parent selection failed: {e}")
+            try:
+                wait_click(wait, (By.ID, f"V6-14-{idx}_pbt_False"))
+            except Exception as e:
+                print(f"[WARN] Child living situation selection failed: {e}")
+            try:
+                driver.find_element(By.ID, f"V6-15-{idx}_pbt").send_keys("0")
+            except Exception as e:
+                print(f"[WARN] Child income entry failed: {e}")
 
     # 6) Housemates --------------------------------------------------------
-    click_yes_no(wait, "V9-1_pbt", data["has_housemates"])
+    try:
+        click_yes_no(wait, "V9-1_pbt", data["has_housemates"])
+    except Exception as e:
+        print(f"[WARN] Housemates selection failed: {e}")
+    
     if data["has_housemates"]:
-        Select(driver.find_element(By.ID, "V9-2_pbt")).select_by_value(str(data["num_housemates"]))
+        try:
+            Select(driver.find_element(By.ID, "V9-2_pbt")).select_by_value(str(data["num_housemates"]))
+        except Exception as e:
+            print(f"[WARN] Housemates number selection failed: {e}")
+        
         for idx, (bday, inc) in enumerate(zip(data["housemate_birthdays"], data["housemate_incomes"]), start=1):
-            fill_date(driver, f"V9-3-{idx}_pbt", bday)
-            driver.find_element(By.ID, f"V9-4-{idx}_pbt").send_keys(inc)
+            try:
+                fill_date(driver, f"V9-3-{idx}_pbt", bday)
+            except Exception as e:
+                print(f"[WARN] Housemate birthday selection failed: {e}")
+            try:
+                driver.find_element(By.ID, f"V9-4-{idx}_pbt").send_keys(inc)
+            except Exception as e:
+                print(f"[WARN] Housemate income entry failed: {e}")
 
     # 7) Room / shared housing -------------------------------------------
-    click_yes_no(wait, "V10-1_pbt", data["lives_in_room"])
+    try:
+        click_yes_no(wait, "V10-1_pbt", data["lives_in_room"])
+    except Exception as e:
+        print(f"[WARN] Room living situation selection failed: {e}")
+    
     if data["lives_in_room"]:
-        click_yes_no(wait, "V10-3_pbt", data["room_eligible_for_rent_allowance"])
+        try:
+            click_yes_no(wait, "V10-3_pbt", data["room_eligible_for_rent_allowance"])
+        except Exception as e:
+            print(f"[WARN] Room rent allowance eligibility selection failed: {e}")
     
     # 8) Group housing for elderly / begeleid wonen -------------------
-    click_yes_no(wait, "V10-2_pbt", data["lives_in_group_housing"])
+    try:
+        click_yes_no(wait, "V10-2_pbt", data["lives_in_group_housing"])
+    except Exception as e:
+        print(f"[WARN] Group housing selection failed: {e}")
 
     # 9) Handicap modifications ------------------------------------------
-    click_yes_no(wait, "V10-5_pbt", data["disability_adjusted_home"])
+    try:
+        click_yes_no(wait, "V10-5_pbt", data["disability_adjusted_home"])
+    except Exception as e:
+        print(f"[WARN] Handicap modifications selection failed: {e}")
 
     # 10) Rent & Service costs --------------------------------------------
-    rent_str = f"{data['basic_rent']:.2f}".replace('.', ',')
-    driver.find_element(By.ID, "V10-10_pbt").send_keys(rent_str)
+    try:
+        rent_str = f"{data['basic_rent']:.2f}".replace('.', ',')
+        driver.find_element(By.ID, "V10-10_pbt").send_keys(rent_str)
+    except Exception as e:
+        print(f"[WARN] Basic rent entry failed: {e}")
 
-    click_yes_no(wait, "V10-11_pbt", data["pays_service_costs"])
+    try:
+        click_yes_no(wait, "V10-11_pbt", data["pays_service_costs"])
+    except Exception as e:
+        print(f"[WARN] Service costs selection failed: {e}")
+
     if data["pays_service_costs"]:
-        energy_str = f"{data['service_energy']:.2f}".replace('.', ',')
-        driver.find_element(By.ID, "V10-12-1_pbt").send_keys(energy_str)
+        try:
+            energy_str = f"{data['service_energy']:.2f}".replace('.', ',')
+            driver.find_element(By.ID, "V10-12-1_pbt").send_keys(energy_str)
+        except Exception as e:
+            print(f"[WARN] Service energy entry failed: {e}")
         
-        cleaning_str = f"{data['service_cleaning']:.2f}".replace('.', ',')
-        driver.find_element(By.ID, "V10-12-2_pbt").send_keys(cleaning_str)
-        
-        janitor_str = f"{data['service_janitor']:.2f}".replace('.', ',')
-        driver.find_element(By.ID, "V10-12-3_pbt").send_keys(janitor_str)
+        try:
+            cleaning_str = f"{data['service_cleaning']:.2f}".replace('.', ',')
+            driver.find_element(By.ID, "V10-12-2_pbt").send_keys(cleaning_str)
+        except Exception as e:
+            print(f"[WARN] Service cleaning entry failed: {e}")
 
-        recreation_str = f"{data['service_recreation']:.2f}".replace('.', ',')
-        driver.find_element(By.ID, "V10-12-4_pbt").send_keys(recreation_str)
+        try:
+            janitor_str = f"{data['service_janitor']:.2f}".replace('.', ',')
+            driver.find_element(By.ID, "V10-12-3_pbt").send_keys(janitor_str)
+        except Exception as e:
+            print(f"[WARN] Service janitor entry failed: {e}")
+
+        try:
+            recreation_str = f"{data['service_recreation']:.2f}".replace('.', ',')
+            driver.find_element(By.ID, "V10-12-4_pbt").send_keys(recreation_str)
+        except Exception as e:
+            print(f"[WARN] Service recreation entry failed: {e}")
 
     # 11) Savings ---------------------------------------------------------
-    click_yes_no(wait, "V11-3_pbt", data["high_savings"])
+    try:
+        click_yes_no(wait, "V11-3_pbt", data["high_savings"])
+    except Exception as e:
+        print(f"[WARN] Savings selection failed: {e}")
 
     # 12) Results ---------------------------------------------------------
-    wait_click(wait, (By.ID, "butResults_pbt"))
-    result_el = wait.until(EC.visibility_of_element_located((By.ID, "divResultTxt_pbt")))
+    try:
+        wait_click(wait, (By.ID, "butResults_pbt"))
+        result_el = wait.until(EC.visibility_of_element_located((By.ID, "divResultTxt_pbt")))
+    except Exception as e:
+        print(f"[ERROR] Result calculation failed: {e}")
+        return "An error occurred while calculating result. Please try again later."
 
     return result_el.text.strip()
 
