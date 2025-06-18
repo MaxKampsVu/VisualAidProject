@@ -98,7 +98,7 @@ class Action:
             # Space digits if input is a bsn or some other number that is not a year
             input_text_s = space_digits(input_text)
 
-            user_confirmation = self._get_navigation_input(self._confirm_user_input_message + self._user_input_type.format(input_text))
+            user_confirmation = self._get_navigation_input(self._confirm_user_input_message + str(input_text_s))
             if user_confirmation == self._NO:
                 self._execute_conditional("Sorry, lets try that again", vu.say)
 
