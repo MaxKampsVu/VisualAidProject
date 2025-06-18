@@ -9,6 +9,7 @@ import action_chain
 import util
 from voice_util import say
 
+import selenium
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.ui import Select, WebDriverWait
@@ -186,7 +187,16 @@ def find_bin(driver: webdriver.Chrome, data: Dict[str, Any]) -> str:
         clusters = [marker for marker in markers if "marker-cluster-wrapper" in marker.get_attribute("class")]
 
     first_marker = poi_markers[0]
-    first_marker.click()
+    while True:
+        try:
+            first_marker.click()
+            break
+        except selenium.common.exceptions.ElementClickInterceptedException:
+            # zoom out a bit
+            zoom_button = wait.until(EC.element_to_be_clickable((By.CLASS_NAME, "leaflet-control-zoom-out")))
+            zoom_button.click()
+            time.sleep(0.5)
+
 
     feature_div = wait.until(EC.presence_of_element_located((By.CLASS_NAME, "feature-digital-item__link")))
     href = feature_div.get_attribute("href")
@@ -239,7 +249,8 @@ def run_calculation(data: Dict[str, Any]) -> str:
 
 if __name__ == '__main__':
     ########## Task 3: Finding nearest bin ###########
-    user_data = collect_user_data()
+    #user_data = collect_user_data()
+    user_data = {"address": "Arendonksingel 74", "container": 12492}
     result = run_calculation(user_data)
     say(result)
     print("Result:", result)
