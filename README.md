@@ -43,6 +43,20 @@ spaCy is a library for word recognition in sentences. You need to download an ML
   python -m spacy download en_core_web_sm
 ```
 
+### Python Packages
+The project has various dependencies which need to be installed.
+
+#### Virtual Environment (Optional)
+First create a virtual environment. This is optional, but recommended.
+```bash
+  python -m venv venv
+  source venv/bin/activate
+```
+#### Installing Packages
+Make sure all the packages in requirements.txt are installed successfully.
+```bash
+  pip install -r requirements.txt
+```
 
 ## 💻 Operating System Requirements
 
