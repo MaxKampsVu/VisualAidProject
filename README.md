@@ -1,4 +1,4 @@
-# ICT for the Global North - Spoken feedback for the visually impaired
+# ICT for the Global North - Spoken feedback for the visually impaired (Group 20)
 ## 📝 About
 This project is a voice-based assistant designed to help visually impaired users access Dutch governmental services. It enables users to navigate websites and complete PDF forms using only their voice, removing the need for visual interaction.
 
