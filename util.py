@@ -7,6 +7,7 @@ import pycountry
 from word2number import w2n
 import voice_util as vu
 from rapidfuzz import process, fuzz
+import datetime
 
 # TODO: download small English language model: python -m spacy download en_core_web_sm
 nlp = spacy.load("en_core_web_sm")
@@ -46,6 +47,25 @@ class INPUT_TYPE(Enum):
     INITIALS = 10
     BSN = 11
     CONTAINER = 12
+
+    def format(self, data):
+        match self:
+            case INPUT_TYPE.AMOUNT:
+                return str(data) + ' euros'
+            case INPUT_TYPE.BSN:
+                # make sure the digits are spelled out individually
+                return ' '.join(data[i] for i in range(len(data)))
+            case INPUT_TYPE.YES_NO:
+                return 'yes' if data else 'no'
+            case INPUT_TYPE.SPELLING:
+                # add spelling read back if the user spelled it out
+                text = data + ', spelled ' + ' '.join(data[i] for i in range(len(data)))
+                return text
+            case INPUT_TYPE.BIRTHDATE:
+                date = datetime.date(data[2], data[1], data[0])
+                return date.strftime('%B %d %Y')
+            case _:
+                return str(data)
 
 def extract_firstname(text):
     doc = nlp(text)
