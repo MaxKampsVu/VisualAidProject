@@ -249,8 +249,7 @@ def run_calculation(data: Dict[str, Any]) -> str:
 
 if __name__ == '__main__':
     ########## Task 3: Finding nearest bin ###########
-    #user_data = collect_user_data()
-    user_data = {"address": "Arendonksingel 74", "container": 12492}
+    user_data = collect_user_data()
     result = run_calculation(user_data)
     say(result)
     print("Result:", result)
