@@ -4,8 +4,6 @@ import util
 from voice_util import say
 
 if __name__ == '__main__':
-    action_chain = action_chain.ActionChain()
-
     ########## Task 2: Finding nearest bin ########### 
     user_data = collect_user_data()
     result = run_calculation(user_data)

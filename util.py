@@ -6,6 +6,7 @@ from dateutil.parser import parse as _parse_date
 import pycountry
 from word2number import w2n
 from voice_util import _make_llm_request
+from rapidfuzz import process, fuzz
 
 # TODO: download small English language model: python -m spacy download en_core_web_sm
 nlp = spacy.load("en_core_web_sm")
@@ -42,6 +43,7 @@ class INPUT_TYPE(Enum):
     AMOUNT = 6
     NUMBER = 8
     YES_NO = 9
+    CONTAINER = 10
 
 def extract_firstname(text):
     doc = nlp(text)
@@ -74,6 +76,34 @@ def extract_spelling(text):
         letters = match.group().split()
         return ''.join(letters).lower()
     return None
+
+def extract_container(text):
+    types = [
+        "residual waste",
+        "glass",
+        "paper",
+        "textile collection",
+        "textile containers",
+        "organic waste",
+        "bread and pastry waste"
+    ]
+
+    text_lower = text.lower()
+
+    # First, try exact match
+    for t in types:
+        if t in text_lower:
+            return t
+
+     # Fuzzy match against the full types list
+    result = process.extractOne(
+        text_lower,  # input string
+        types,  # list of valid types
+        scorer=fuzz.partial_ratio,
+        score_cutoff=80  # adjust threshold for strictness
+    )
+
+    return result[0] if result else None
 
 def extract_birthdate(text: str) -> tuple[int, int, int] | None:
     """Return (day, month, year) as ints, or None if not recognized."""
@@ -182,6 +212,8 @@ def extract(input_type, text):
             return extract_number(text)
         case INPUT_TYPE.YES_NO:    
             return extract_yes_no(text)
+        case INPUT_TYPE.CONTAINER:
+            return extract_container(text)
     return None
 
 

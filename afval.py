@@ -47,7 +47,7 @@ def ask(question: str, input_type: util.INPUT_TYPE) -> Any:
 #   collect_user_data: demo prompts + hard-coded defaults
 # ------------------------------------------------------------------
 def collect_user_data() -> Dict[str, Any]:
-    say("Welcome to the Dutch Waste container map. Let’s collect just a few details to run the calculation.")
+    say("Welcome to the Dutch Waste container map service. Let’s collect just a few details and find a container near you for your waste.")
     data: dict[str, any] = {}
 
     # — Ask for Address — ----------------------------------------------------
@@ -77,15 +77,24 @@ def collect_user_data() -> Dict[str, Any]:
 
      # — Ask for container type — ----------------------------------------------------
     container: int | None = None
+    type_mapping = {
+        "residual waste": 1,
+        "glass": 2,
+        "paper": 3,
+        "textile collection": 4,
+        "textile containers": 5,
+        "organic waste": 6,
+        "bread and pastry waste" : 7
+    }
     def store_container(v):
         nonlocal container
         container = v
-        data["container"] = int("1249" + str(container)) if container in {1, 2, 3, 5, 6, 7} else 13698
+        data["container"] = int("1249" + str(type_mapping[v])) if container in {1, 2, 3, 5, 6, 7} else 13698
         print(f"[DEBUG] Stored container type: {container}")
 
     h = action_chain.add_action()
-    h.add_prompt_user("What is the container type you want to find? Say 1 for residual waste, 2 for glass, 3 for paper, 4 for textile collection, 5 for textile containers, 6 for organic waste, or 7 for bread and pastry waste.")
-    h.add_get_user_input(util.INPUT_TYPE.NUMBER, store_container)
+    h.add_prompt_user("What is the container type you want to find? Residual waste or glass or paper or textile collection, or textile containers, or organic waste, or bread and pastry waste.")
+    h.add_get_user_input(util.INPUT_TYPE.CONTAINER, store_container)
     h.add_confirm_user_input("Did I understand you correctly, the container type you want to find is ")
 
     # fill dummy data for testing

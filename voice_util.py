@@ -6,7 +6,7 @@ import util
 import platform
 import traceback
 
-audio_player = "afplay" #TODO: Specify the cmd audio player for your operating system - afplay
+audio_player = "mpv" #TODO: Specify the cmd audio player for your operating system - afplay
 ''' config for speech recognition '''
 r = sr.Recognizer()
 pause_threshold_spelling = 2.0 # pauses between words when spelling
