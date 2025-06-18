@@ -169,4 +169,7 @@ def fill_pdf(data: dict[str, any]):
 if __name__ == "__main__":
     ########## Task 1: Filling out pdf form ###########
     user_data = collect_pdf_user_data()
-    fill_pdf(user_data)
+    say("Thanks. I'm now filling in the PDF document.")
+    result = fill_pdf(user_data)
+    say(result)
+    print("PDF filled and saved as 'filled_example.pdf'.")
