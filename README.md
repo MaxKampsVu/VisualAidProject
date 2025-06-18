@@ -1,5 +1,57 @@
-ICT for the Global North
-Group 20
+# ICT for the Global North - Spoken feedback for the visually impaired
+## 📝 About
+This project is a voice-based assistant designed to help visually impaired users access Dutch governmental services. It enables users to navigate websites and complete PDF forms using only their voice, removing the need for visual interaction.
 
-Spoken feedback for the visually impaired
+## 🎮 Demos
+
+We have provided three different demos, each focused on a specific task:
+
+- **Applying for Tax Benefits — `fill_pdf_document.py`**  
+  You are guided through the process of completing a Dutch tax form. The system fills out a PDF form that you can submit to the authorities:  
+  [Model opgaaf gegevens voor de loonheffingen (LH0082Z)](https://download.belastingdienst.nl/belastingdienst/docs/model_opgaaf_gegevens_loonheffingen_lh0082z11fol.pdf)
+
+- **Eligibility for Benefits — `toeslagen.py`**  
+  You are guided through the Dutch government's official **"Proefberekening Toeslagen"** (benefits eligibility calculator):  
+  [Proefberekening Toeslagen](https://www.belastingdienst.nl/wps/wcm/connect/nl/toeslagen/content/hulpmiddel-proefberekening-toeslagen)  
+  The assistant collects the necessary personal information and makes a request on your behalf to the website to check your eligibility for healthcare, rental, or child benefits.
+
+- **Garbage Disposal Directions — `afval.py`**  
+  This demo helps you find the nearest garbage disposal containers in Amsterdam using the city's official map:  
+  [Afvalcontainers Kaart Amsterdam](https://kaart.amsterdam.nl/afvalcontainers)
+
+> ⚠️ **Note:** As this is a prototype, the full user interaction is not implemented. Some input values are currently hardcoded to demonstrate the system’s functionality.
+
+> ⚠️ **Note:** As this is a prototype, voice recognition may not work for certain inputs. When prompted by the system, you can try interacting with the system using personal details like your own **name**, **date of birth**, etc. If your queries are not understood, please fall back on the **example sentences** provided as comments in the demo files.
+
+## ⚙️ Installation
+
+### LM Studio (for ML model execution)
+LM Studio allows you to run a machine learning model locally:  
+<https://lmstudio.ai/>
+
+- Download Google's smallest model: `gemma-3-1b`.  
+  This can be done via the top bar in LM Studio.
+- Ensure LM Studio has a local endpoint by opening the developer settings and setting the application status to "running".
+
+> ⚠️ **Note:** LM Studio is **not compatible with Intel Macs**. It currently supports only Apple Silicon (M1/M2) and Windows/Linux systems
+
+### Model for spaCy
+spaCy is a library for word recognition in sentences. You need to download an ML model for it with:  
+```bash
+  python -m spacy download en_core_web_sm
+```
+
+
+## 💻 Operating System Requirements
+
+### Linux
+#### Audio Player
+You need to install the audio player **mpv**:  
+<https://mpv.io/>
+
+### Intel Mac
+
+#### Alternative to LM Studio
+As an alternative to LM Studio, you need to install and run **llama2** locally. 
+//TODO: What are we using here?
 
