@@ -54,6 +54,6 @@ You need to install the audio player **mpv**:
 ### Intel Mac
 
 #### Alternative to LM Studio
-As an alternative to LM Studio, you need to install and run **llama2** locally. 
-//TODO: What are we using here?
+As an alternative to LM Studio, you need to install and run **llama2** locally:
+<https://ollama.com/library/llama3>
 
