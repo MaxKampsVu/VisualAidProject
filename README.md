@@ -27,6 +27,9 @@ We have provided three different demos, each focused on a specific task:
 
 ## ⚙️ Installation
 
+### Browser
+Some features require a browser to run. The supported browsers are Chrome and Chromium.
+
 ### LM Studio (for ML model execution)
 LM Studio allows you to run a machine learning model locally:  
 <https://lmstudio.ai/>
