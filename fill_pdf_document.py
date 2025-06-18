@@ -48,7 +48,7 @@ def collect_pdf_user_data() -> dict[str, any]:
         print(f"[DEBUG] BSN → {val}")
 
     h = action_chain.add_action()
-    h.add_prompt_user("What is your BSN number?")
+    h.add_prompt_user("What are the 9-digits of your BSN number?")
     h.add_get_user_input(util.INPUT_TYPE.BSN, store_bsn)
     h.add_confirm_user_input("Did I understand you correctly, your BSN is ")
 
@@ -128,6 +128,7 @@ def _set_checkbox(annot, want_label):
 # ---------------------------------------------------------------------------
 
 def fill_pdf(data: dict[str, any]):
+    say("Thank you! I've filled out your pdf document. The file is titled filled_example.pdf")
     pdf = PdfReader(INPUT_PDF)
 
     for page in pdf.pages:

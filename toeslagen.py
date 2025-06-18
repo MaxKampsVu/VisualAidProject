@@ -66,7 +66,7 @@ def collect_user_data() -> dict[str, any]:
             print("[DEBUG] Used fallback birthdate: 1-1-1990")
 
     h = action_chain.add_action()
-    h.add_prompt_user("What is your birth-date?")
+    h.add_prompt_user("What is your birth-date? For example 6th of February 2003 ")
     h.add_get_user_input(util.INPUT_TYPE.BIRTHDATE, store_birthdate)
     h.add_confirm_user_input("Did I understand you correctly, your birth-date is ")
     

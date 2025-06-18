@@ -14,8 +14,8 @@ environment = "linux"
 ''' config for speech recognition '''
 r = sr.Recognizer()
 pause_threshold_spelling = 2.0 # pauses between words when spelling
-pause_threshold_normal = 1.0 # pauses between words for normal sentences
-timeout = 3 # wait time until user speaks
+pause_threshold_normal = 1.5 # pauses between words for normal sentences
+timeout = 5 # wait time until user speaks
 phrase_time_limit = 20 # maximum record time
 duration = 5 # record time in seconds
 ''' config for gTTS (audio output) '''

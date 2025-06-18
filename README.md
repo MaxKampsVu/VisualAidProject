@@ -21,7 +21,9 @@ We have provided three different demos, each focused on a specific task:
 
 > ⚠️ **Note:** As this is a prototype, the full user interaction is not implemented. Some input values are currently hardcoded to demonstrate the system’s functionality.
 
-> ⚠️ **Note:** As this is a prototype, voice recognition may not work for certain inputs. When prompted by the system, you can try interacting with the system using personal details like your own **name**, **date of birth**, etc. If your queries are not understood, please fall back on the **example sentences** provided as comments in the demo files.
+> ⚠️ **Note:** Voice recognition may not work for certain inputs. When prompted by the system, you can try interacting with the system using personal details like your own **name**, **date of birth**, etc. If your queries are not understood, please fall back on the **example sentences** provided as comments in the demo files.
+
+> ⚠️ **Note:** When prompted to confirm an input (e.g. when asked: "Did I understand you correctly?"), please say "yes you did" or "no you did not". Other answers are not reliably recognized 
 
 ## ⚙️ Installation
 
