@@ -82,7 +82,6 @@ def collect_user_data() -> Dict[str, Any]:
         "residual waste": 1,
         "glass": 2,
         "paper": 3,
-        "textile collection": 4,
         "textile containers": 5,
         "organic waste": 6,
         "bread and pastry waste" : 7
@@ -90,7 +89,7 @@ def collect_user_data() -> Dict[str, Any]:
     def store_container(v):
         nonlocal container
         container = v
-        data["container"] = int("1249" + str(type_mapping[v])) if container in {1, 2, 3, 5, 6, 7} else 13698
+        data["container"] = 13698 if container == "textile collection" else int("1249" + str(type_mapping[v]))
         print(f"[DEBUG] Stored container type: {container}")
 
     h = action_chain.add_action()
@@ -142,7 +141,7 @@ def find_bin(driver: webdriver.Chrome, data: Dict[str, Any]) -> str:
 
     # 4) Find the ul with class categories and click on all the checkboxes inside it except for the one with value "1249 + str(data['container'])"
     # Using their xpaths
-    container_type_value = int("1249" + str(data["container"]))
+    container_type_value = data["container"]
     categories_ul = wait.until(EC.presence_of_element_located((By.XPATH, "//ul[@class='categories']")))
     checkboxes = categories_ul.find_elements(By.CLASS_NAME, "form-checkbox__label")
     for checkbox in [12491, 12492, 12493, 12495, 13698, 12496, 12497]:
