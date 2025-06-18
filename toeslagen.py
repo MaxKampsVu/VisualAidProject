@@ -1,3 +1,4 @@
+import asyncio
 import time
 import util
 from typing import Dict, Optional, Tuple, Any
@@ -356,6 +357,9 @@ def fill_form(driver: webdriver.Chrome, data: Dict[str, Any]):
     try:
         wait_click(wait, (By.ID, "butResults_pbt"))
         result_el = wait.until(EC.visibility_of_element_located((By.ID, "divResultTxt_pbt")))
+
+        # Only first <p> tag contains the result
+        result_el = result_el.find_elements(By.TAG_NAME, 'p')[0]
     except Exception as e:
         print(f"[ERROR] Result calculation failed: {e}")
         return "An error occurred while calculating result. Please try again later."
@@ -366,10 +370,10 @@ def fill_form(driver: webdriver.Chrome, data: Dict[str, Any]):
 #   LAUNCH DRIVER + SCRIPT + TRANSLATE
 # ---------------------------------------------------------------------------
 
-translator = Translator()
-
-def translate_to_english(text: str) -> str:
-    return translator.translate(text, src="nl", dest="en").text
+async def translate_to_english(text: str) -> str:
+    async with Translator() as translator:
+        result = await translator.translate(text, src="nl", dest="en")
+        return result.text
 
 
 def run_calculation(data: Dict[str, Any]):
@@ -387,7 +391,7 @@ def run_calculation(data: Dict[str, Any]):
             EC.presence_of_element_located((By.ID, "V1-1_pbt"))
         )
         result = fill_form(driver, data)
-        result = translate_to_english(result)
+        result = asyncio.run(translate_to_english(result))
     finally:
         time.sleep(3)
         driver.quit()
@@ -401,4 +405,6 @@ def run_calculation(data: Dict[str, Any]):
 if __name__ == "__main__":
     ########## Task 2: Visiting benefit calculator page ###########
     user_data = collect_user_data()
-    run_calculation(user_data)
+    say("Please wait for the calculation...")
+    result = run_calculation(user_data)
+    say(result)
