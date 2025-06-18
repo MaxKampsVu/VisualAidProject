@@ -67,8 +67,8 @@ def collect_user_data() -> Dict[str, Any]:
     def store_stNumber(v):
         nonlocal stNumber
         stNumber = v
-        data["address"] = data.get("address", "") + f" {stNumber}"
-        print(f"[DEBUG] Stored house number: {stNumber}")
+        data["address"] = data.get("address") + f" {str(stNumber)}"
+        print(f"[DEBUG] Stored house number: {str(stNumber)}")
 
     h = action_chain.add_action()
     h.add_prompt_user("What is your house number?")
@@ -89,8 +89,8 @@ def collect_user_data() -> Dict[str, Any]:
     h.add_confirm_user_input("Did I understand you correctly, the container type you want to find is ")
 
     # fill dummy data for testing
-    data["container"] = residual  # Default to residual waste
-    say(f"Thanks. I will now search for the nearest waste container for {data['container']} at {data['address']}.")
+    #data["container"] = residual  # Default to residual waste
+    #say(f"Thanks. I will now search for the nearest waste container for {data.get('container')} at {data.get('address')}.")
 
     action_chain.run()
 
