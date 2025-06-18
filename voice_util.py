@@ -11,22 +11,6 @@ import sys
 audio_player = "mpv" 
 environment = "linux"
 
-if sys.platform.startswith("linux"):
-    print("Running on Linux")
-elif sys.platform == "darwin":
-    print("Running on macOS")
-    audio_player = "afplay"
-    environment = "mac"
-
-    ### Differnt model (llama2) request
-    MODEL_NAME = "llama2"
-    url = "http://localhost:11434/api/generate"
-    headers = {
-        "Content-Type": "application/json"
-    }
-else:
-    print(f"Running on unknown platform: {sys.platform}")
-
 ''' config for speech recognition '''
 r = sr.Recognizer()
 pause_threshold_spelling = 2.0 # pauses between words when spelling
@@ -43,6 +27,22 @@ headers = {
    "Content-Type": "application/json",
   "Authorization": "Bearer lm-studio"
 }
+
+if sys.platform.startswith("linux"):
+    print("Running on Linux")
+elif sys.platform == "darwin":
+    print("Running on macOS")
+    audio_player = "afplay"
+    environment = "mac"
+
+    ### Differnt model (llama2) request
+    MODEL_NAME = "llama2"
+    url = "http://localhost:11434/api/generate"
+    headers = {
+        "Content-Type": "application/json"
+    }
+else:
+    print(f"Running on unknown platform: {sys.platform}")
 
 ### Helper methods
 

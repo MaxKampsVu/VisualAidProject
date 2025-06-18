@@ -42,6 +42,8 @@ class INPUT_TYPE(Enum):
     AMOUNT = 6
     NUMBER = 8
     YES_NO = 9
+    INITIALS = 10
+    BSN = 11
 
 def extract_firstname(text):
     doc = nlp(text)
@@ -162,6 +164,21 @@ def extract_yes_no(text: str) -> bool | None:
     print(f"[Warning] Could not interpret yes/no from LLM reply: {llm_reply!r}")
     return None
 
+def extract_initials(text: str) -> str | None:
+    matches = re.findall(r'\b[A-Za-z]\b', text) or re.findall(r'[A-Za-z]', text)
+    if matches:
+        initials = '.'.join(letter.upper() for letter in matches) + '.'
+        return initials
+    print("[Warning] Could not extract initials.")
+    return None
+
+def extract_bsn(text: str) -> str:
+    digits = ''.join(ch for ch in text if ch.isdigit())
+    if len(digits) == 9:
+        return digits
+    print(f"[Warning] BSN must be 9 digits. Got: {digits!r}.")
+    return "123456789"
+
 def extract(input_type, text):
     match input_type:
         case INPUT_TYPE.FIRSTNAME:
@@ -182,6 +199,10 @@ def extract(input_type, text):
             return extract_number(text)
         case INPUT_TYPE.YES_NO:    
             return extract_yes_no(text)
+        case INPUT_TYPE.INITIALS:
+            return extract_initials(text)
+        case INPUT_TYPE.BSN:
+            return extract_bsn(text)
     return None
 
 

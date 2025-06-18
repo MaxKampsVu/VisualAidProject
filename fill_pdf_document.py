@@ -1,4 +1,5 @@
 from pdfrw import PdfReader, PdfWriter, PdfName, PdfString
+from datetime import datetime
 import util
 import action_chain
 from voice_util import say
@@ -29,46 +30,47 @@ def collect_pdf_user_data() -> dict[str, any]:
     h.add_get_user_input(util.INPUT_TYPE.SPELLING, store_last_name)
     h.add_confirm_user_input("Did I understand you correctly, your last name is ")
 
+
     # --- initials ---------------------------------------------
-    # TODO: Add logic
-    data["_initials"] = "C"
+    def store_initials(val: str):
+        data["_initials"] = val
+        print(f"[DEBUG] initials → {data['_initials']}")
+
+    h = action_chain.add_action()
+    h.add_prompt_user("Please say your initials one by one.")
+    h.add_get_user_input(util.INPUT_TYPE.INITIALS, store_initials)
+    h.add_confirm_user_input("Did I understand you correctly, your initials are ")
 
 
     # --- BSN ---------------------------------------------------
     def store_bsn(val: str):
         data["1_BSN"] = val
-        print(f"[DEBUG] BSN       → {val}")
+        print(f"[DEBUG] BSN → {val}")
 
     h = action_chain.add_action()
     h.add_prompt_user("What is your BSN number?")
-    h.add_get_user_input(util.INPUT_TYPE.NUMBER, store_bsn)
+    h.add_get_user_input(util.INPUT_TYPE.BSN, store_bsn)
     h.add_confirm_user_input("Did I understand you correctly, your BSN is ")
 
+
     # --- §2a  (loonheffings-korting) ---------------------------
-    def store_q2a(val: bool):   
-        if val:
-            data["TICK_2A_JA"] = bool(val) 
-            print(f"[DEBUG] 2a (korting) → {bool(val)}")
-        else:  
-            data["TICK_2A_JA"] = not bool(val)     
-            print(f"[DEBUG] 2a (korting) → {not bool(val)}")   
+    def store_q2a(val: bool):
+        data["TICK_2A_JA"] = val
+        print(f"[DEBUG] 2a (korting) → {val}")
 
     h = action_chain.add_action()
-    h.add_prompt_user("Do you want this employer to apply the wage-tax credit? Please answer yes or no.")
+    h.add_prompt_user("Would you like this employer or benefits agency to apply the wage tax credit? Please note: you can only have this credit applied by one employer or agency at a time.")
     h.add_get_user_input(util.INPUT_TYPE.YES_NO, store_q2a)
     h.add_confirm_user_input("Did I understand you correctly, your answer is ")
 
+
     # --- §2b  (alleenst.-ouderenkorting) -----------------------
     def store_q2b(val: bool):
-        if val:
-            data["TICK_2B_JA"] = bool(val) 
-            print(f"[DEBUG] 2b (alleenstaande-ouderenkorting) → {bool(val)}")
-        else:  
-            data["TICK_2B_JA"] = not bool(val)
-            print(f"[DEBUG] 2b (alleenstaande-ouderenkorting) → {bool(val)}")
+        data["TICK_2B_JA"] = val
+        print(f"[DEBUG] 2b (alleenstaande-ouderenkorting) → {val}")
 
     h = action_chain.add_action()
-    h.add_prompt_user("Do you want the single-elderly tax credit applied as well? Please answer yes or no.")
+    h.add_prompt_user("Do you want this employer or benefits agency to apply the single-parent elderly tax credit? This is only allowed if you’re entitled to it and you answered 'yes' to the previous question.")
     h.add_get_user_input(util.INPUT_TYPE.YES_NO, store_q2b)
     h.add_confirm_user_input("Did I understand you correctly, your answer is ")
 
@@ -84,12 +86,22 @@ def collect_pdf_user_data() -> dict[str, any]:
         "2": "Hoofdstraat 5",  # Street + house number
         "3": "1234AB",  # Postcode
         "4": "Amsterdam",  # City
-        "5": "Noord-Holland",  # Region (if abroad)
+        "5": "Noord-Holland",  # Region 
         "6": "Nederland",  # Country
         "d": "01",  # Birthdate day
         "m": "07",  # Birthdate month
         "y": "1997",  # Birthdate year
     })
+
+    # — Add current date to field "date" — -------------------------------
+    today = datetime.today()
+    data.update({
+        "d_F": f"{today.day:02d}",
+        "m_F": f"{today.month:02d}",
+        "y_F": f"{today.year}",
+    })
+    print(f"[DEBUG] Current date → {today.strftime('%d-%m-%Y')}")
+
     return data
 
 
@@ -147,8 +159,9 @@ def fill_pdf(data: dict[str, any]):
                     _set_checkbox(annot, "Ja")
                 else:
                     _set_checkbox(annot, "Nee")
-    
-    return "The form has been filled and saved as 'filled_example.pdf'. Please remember to write the date next to the checkbox on page two and sign the form."
+
+    PdfWriter().write(OUTPUT_PDF, pdf)
+    return f"The form has been filled and saved as '{OUTPUT_PDF}'. Please remember to write the missing date next to the checkbox for question 2a on page two and sign the form."
 
 # ---------------------------------------------------------------------------
 #   MAIN
