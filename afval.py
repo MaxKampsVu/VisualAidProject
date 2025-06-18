@@ -52,7 +52,7 @@ def collect_user_data() -> Dict[str, Any]:
 
     # — Ask for Address — ----------------------------------------------------
     address: int | None = None
-    def store_year(v):
+    def store_address(v):
         nonlocal address
         address = v
         data["address"] = address
@@ -60,7 +60,7 @@ def collect_user_data() -> Dict[str, Any]:
 
     h = action_chain.add_action()
     h.add_prompt_user("Please spell the name of your street?")
-    h.add_get_user_input(util.INPUT_TYPE.SPELLING, address)
+    h.add_get_user_input(util.INPUT_TYPE.SPELLING, store_address)
     h.add_confirm_user_input("Did I understand you correctly, the name of your street is ")
     
     stNumber: int | None = None
