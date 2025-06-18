@@ -3,5 +3,15 @@ gTTS
 pyaudio
 nameparser
 spacy
-
-
+selenium
+webdriver-manager
+googletrans
+requests
+python-dotenv
+python-dateutil
+pycountry
+word2number
+pdfrw
+annotated-types
+pydantic
+pydantic_core

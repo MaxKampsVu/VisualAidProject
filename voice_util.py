@@ -6,7 +6,11 @@ import util
 import platform
 import traceback
 
-audio_player = "mpv" #TODO: Specify the cmd audio player for your operating system
+import sys
+
+audio_player = "mpv" 
+environment = "linux"
+
 ''' config for speech recognition '''
 r = sr.Recognizer()
 pause_threshold_spelling = 2.0 # pauses between words when spelling
@@ -17,25 +21,55 @@ duration = 5 # record time in seconds
 ''' config for gTTS (audio output) '''
 language = 'en'
 ''' config for LLM '''
-MODEL_NAME = "gemma-3-1b"
+MODEL_NAME = "google/gemma-3-1b"
 url = "http://localhost:1234/v1/chat/completions"
 headers = {
-    "Content-Type": "application/json",
-    "Authorization": "Bearer lm-studio"
+   "Content-Type": "application/json",
+  "Authorization": "Bearer lm-studio"
 }
+
+if sys.platform.startswith("linux"):
+    print("Running on Linux")
+elif sys.platform == "darwin":
+    print("Running on macOS")
+    audio_player = "afplay"
+    environment = "mac"
+
+    ### Differnt model (llama2) request
+    MODEL_NAME = "llama2"
+    url = "http://localhost:11434/api/generate"
+    headers = {
+        "Content-Type": "application/json"
+    }
+else:
+    print(f"Running on unknown platform: {sys.platform}")
 
 ### Helper methods
 
 def _make_llm_request(prompt):
-    data = {
-        "model": f"{MODEL_NAME}",
-        "messages": [
-            {"role": "user", "content": f"{prompt}"},
-        ],
-        "temperature": 0.7
-    }
-    request = requests.post(url, headers=headers, json=data)
-    return request.json()["choices"][0]["message"]["content"]
+    if environment == "mac":
+        data = {
+            "model": MODEL_NAME,
+            "prompt": prompt,
+            "stream": False,  # Set to True if you want streamed output
+            "temperature": 0.7
+        }
+
+        response = requests.post(url, headers=headers, json=data)
+        return response.json()["response"]
+    else:
+        data = {
+            "model": f"{MODEL_NAME}",
+            "messages": [
+                {"role": "user", "content": f"{prompt}"},
+            ],
+            "temperature": 0.7
+        }
+        request = requests.post(url, headers=headers, json=data)
+        print(request.json())
+        return request.json()["choices"][0]["message"]["content"]
+
+
 
 def _contains_word(text, word_list):
     """
@@ -156,8 +190,16 @@ def categorize_user_input(categories):
 
 
 try:
-    response = requests.get("http://localhost:1234", timeout=2)
-    print("[SUCCESS] LM studio online")
+    # Check if LM Studio is running by sending a request
+    if environment == "linux":
+        response = requests.get("http://localhost:1234", timeout=2)
+        print("[SUCCESS] LM studio online")
+    elif environment == "mac":
+        # Check for llama2 model availability
+        response = requests.get("http://localhost:11434/api/models", timeout=2)
+        print("[SUCCESS] Llama2 model available")
+
+    print(response)
 except requests.RequestException:
     print("[ERROR] Couldn't reach LM studio, did you start it?")
 
