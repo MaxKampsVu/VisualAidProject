@@ -5,6 +5,7 @@ nameparser
 spacy
 selenium
 googletrans
+webdriver-manager
 requests
 python-dotenv
 python-dateutil
