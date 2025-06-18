@@ -18,7 +18,7 @@ action_chain = action_chain.ActionChain()
 # ----------------------------------------------------------------------
 def collect_pdf_user_data() -> dict[str, any]:
 
-    # say("Welcome to the Dutch wage tax form assistant. Let’s collect just a few details to fill out your pdf form.")
+    say("Welcome to the Dutch wage tax form assistant. Let’s collect just a few details to fill out your pdf form.")
     data: dict[str, any] = {}
     # --- last-name (spelled) ----------------------------------
     def store_last_name(val: str):
