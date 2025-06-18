@@ -4,7 +4,6 @@ pyaudio
 nameparser
 spacy
 selenium
-webdriver-manager
 googletrans
 requests
 python-dotenv
