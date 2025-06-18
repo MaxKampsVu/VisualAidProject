@@ -1,9 +1,9 @@
-import asyncio
 import time
 import util
 from typing import Dict, Optional, Tuple, Any
 import action_chain
 from voice_util import say
+import sys
 
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
@@ -13,6 +13,13 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from googletrans import Translator
+
+# Fix for macOS
+if sys.platform == 'darwin':
+    from webdriver_manager.chrome import ChromeDriverManager
+else:
+    # Translater.translate seems to not be async on macOS? only import asyncio on other platforms
+    import asyncio
 
 
 # ---------------------------------------------------------------------------
@@ -370,10 +377,16 @@ def fill_form(driver: webdriver.Chrome, data: Dict[str, Any]):
 #   LAUNCH DRIVER + SCRIPT + TRANSLATE
 # ---------------------------------------------------------------------------
 
-async def translate_to_english(text: str) -> str:
-    async with Translator() as translator:
-        result = await translator.translate(text, src="nl", dest="en")
-        return result.text
+# Translater.translate seems to not be async on macOS?
+if sys.platform == 'darwin':
+    translator = Translator()
+    def translate_to_english(text: str) -> str:
+        return translator.translate(text, src="nl", dest="en").text
+else:
+    async def translate_to_english(text: str) -> str:
+        async with Translator() as translator:
+            result = await translator.translate(text, src="nl", dest="en")
+            return result.text
 
 
 def run_calculation(data: Dict[str, Any]):
@@ -381,7 +394,13 @@ def run_calculation(data: Dict[str, Any]):
     if CHROME_HEADLESS:
         opts.add_argument("--headless=new")
     
-    driver  = webdriver.Chrome(options=opts)
+    # macOS fix again
+    if sys.platform == 'darwin':
+        service = Service(ChromeDriverManager().install())
+        driver = webdriver.Chrome(service=service, options=opts)
+    else:
+        driver = webdriver.Chrome(options=opts)
+
     driver.set_window_size(1280, 1200)
 
     result: Optional[str] = None
@@ -391,7 +410,13 @@ def run_calculation(data: Dict[str, Any]):
             EC.presence_of_element_located((By.ID, "V1-1_pbt"))
         )
         result = fill_form(driver, data)
-        result = asyncio.run(translate_to_english(result))
+
+        # Translater.translate seems to not be async on macOS?
+        if sys.platform == 'darwin':
+            result = translate_to_english(result)
+        else:
+            result = asyncio.run(translate_to_english(result))
+
     finally:
         time.sleep(3)
         driver.quit()

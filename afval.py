@@ -15,7 +15,9 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support import expected_conditions as EC
 
-from googletrans import Translator
+# Fix for macOS
+if sys.platform == 'darwin':
+    from webdriver_manager.chrome import ChromeDriverManager
 
 # ------------------------------------------------------------------
 #   Config & globals
@@ -29,7 +31,6 @@ residual, glass, paper, textile, textile_collection, organic, bread  = (1, 2, 3,
 CHROME_HEADLESS = False
 DEFAULT_TIMEOUT = 15
 
-translator = Translator()
 action_chain = action_chain.ActionChain()
 
 # ------------------------------------------------------------------
@@ -209,17 +210,20 @@ def find_bin(driver: webdriver.Chrome, data: Dict[str, Any]) -> str:
     address_text = address_text.replace("Bestemming", "").strip()
     return f"The nearest waste container for {data['container']} is located at {address_text}."
 # ------------------------------------------------------------------
-#   Translate & run
+#   Run
 # ------------------------------------------------------------------
-def translate_to_english(text: str) -> str:
-    return translator.translate(text, src="nl", dest="en").text
-
 def run_calculation(data: Dict[str, Any]) -> str:
     opts = Options()
     if CHROME_HEADLESS:
         opts.add_argument("--headless=new")
 
-    driver  = webdriver.Chrome(options=opts)
+    # macOS fix again
+    if sys.platform == 'darwin':
+        service = Service(ChromeDriverManager().install())
+        driver = webdriver.Chrome(service=service, options=opts)
+    else:
+        driver = webdriver.Chrome(options=opts)
+
     driver.maximize_window() # Needed to get most information on screen
 
     try:
