@@ -40,12 +40,6 @@ LM Studio allows you to run a machine learning model locally:
 
 > ⚠️ **Note:** LM Studio is **not compatible with Intel Macs**. It currently supports only Apple Silicon (M1/M2) and Windows/Linux systems
 
-### Model for spaCy
-spaCy is a library for word recognition in sentences. You need to download an ML model for it with:  
-```bash
-  python -m spacy download en_core_web_sm
-```
-
 ### Python Packages
 The project has various dependencies which need to be installed.
 
@@ -59,6 +53,12 @@ First create a virtual environment. This is optional, but recommended.
 Make sure all the packages in requirements.txt are installed successfully.
 ```bash
   pip install -r requirements.txt
+```
+
+### Model for spaCy
+spaCy is a library for word recognition in sentences. You need to download an ML model for it with:
+```bash
+  python -m spacy download en_core_web_sm
 ```
 
 ## 💻 Operating System Requirements
