@@ -51,7 +51,7 @@ def collect_user_data() -> Dict[str, Any]:
     data: dict[str, any] = {}
 
     # — Ask for Address — ----------------------------------------------------
-    address: int | None = None
+    address: str | None = None
     def store_address(v):
         nonlocal address
         address = v
