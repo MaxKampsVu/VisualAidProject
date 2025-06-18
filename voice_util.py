@@ -46,7 +46,7 @@ else:
 
 ### Helper methods
 
-def _make_llm_request(prompt):
+def make_llm_request(prompt):
     if environment == "mac":
         data = {
             "model": MODEL_NAME,
@@ -168,7 +168,7 @@ def categorize_user_input(categories):
                 f"Which category from the list {categories} fits the sentence: "
                 f"'{user_input}' the best? Only reply with the matching category name."
             )
-            llm_reply = _make_llm_request(prompt)
+            llm_reply = make_llm_request(prompt)
             print(f"LLM categorized the input as: {llm_reply}")
 
             category = _contains_word(llm_reply, categories)

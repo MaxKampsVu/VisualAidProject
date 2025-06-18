@@ -401,5 +401,6 @@ def run_calculation(data: Dict[str, Any]):
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
+    ########## Task 2: Visiting benefit calculator page ###########
     user_data = collect_user_data()
     run_calculation(user_data)

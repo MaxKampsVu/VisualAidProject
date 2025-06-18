@@ -234,3 +234,10 @@ def run_calculation(data: Dict[str, Any]) -> str:
     finally:
         time.sleep(3)
         driver.quit()
+
+if __name__ == '__main__':
+    ########## Task 3: Finding nearest bin ###########
+    user_data = collect_user_data()
+    result = run_calculation(user_data)
+    say(result)
+    print("Result:", result)

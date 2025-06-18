@@ -17,9 +17,9 @@ action_chain = action_chain.ActionChain()
 # Collect user data for filling the PDF form
 # ----------------------------------------------------------------------
 def collect_pdf_user_data() -> dict[str, any]:
-    say("Welcome to the Dutch wage tax form assistant. Let’s collect just a few details to fill out your pdf form.")
-    data: dict[str, any] = {}
 
+    # say("Welcome to the Dutch wage tax form assistant. Let’s collect just a few details to fill out your pdf form.")
+    data: dict[str, any] = {}
     # --- last-name (spelled) ----------------------------------
     def store_last_name(val: str):
         data["_lastname"] = val.lower().capitalize()
@@ -40,8 +40,7 @@ def collect_pdf_user_data() -> dict[str, any]:
     h.add_prompt_user("Please say your initials one by one.")
     h.add_get_user_input(util.INPUT_TYPE.INITIALS, store_initials)
     h.add_confirm_user_input("Did I understand you correctly, your initials are ")
-
-
+    
     # --- BSN ---------------------------------------------------
     def store_bsn(val: str):
         data["1_BSN"] = val
@@ -51,7 +50,6 @@ def collect_pdf_user_data() -> dict[str, any]:
     h.add_prompt_user("What are the 9-digits of your BSN number?")
     h.add_get_user_input(util.INPUT_TYPE.BSN, store_bsn)
     h.add_confirm_user_input("Did I understand you correctly, your BSN is ")
-
 
     # --- §2a  (loonheffings-korting) ---------------------------
     def store_q2a(val: bool):
@@ -169,5 +167,6 @@ def fill_pdf(data: dict[str, any]):
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
+    ########## Task 1: Filling out pdf form ###########
     user_data = collect_pdf_user_data()
     fill_pdf(user_data)

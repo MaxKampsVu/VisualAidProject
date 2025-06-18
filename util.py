@@ -2,6 +2,11 @@ from nameparser import HumanName
 import spacy
 from enum import Enum
 import re
+from dateutil.parser import parse as _parse_date
+import pycountry
+from word2number import w2n
+import voice_util as vu
+from rapidfuzz import process, fuzz
 
 # TODO: download small English language model: python -m spacy download en_core_web_sm
 nlp = spacy.load("en_core_web_sm")
@@ -74,6 +79,134 @@ def extract_spelling(text):
         return ''.join(letters).lower()
     return None
 
+def extract_birthdate(text: str) -> tuple[int, int, int] | None:
+    """Return (day, month, year) as ints, or None if not recognized."""
+    doc = nlp(text)
+    date_ent = next((ent.text for ent in doc.ents if ent.label_ == "DATE"), None)
+    if not date_ent:
+        print("[Warning] SpaCy did not recognize a date.")
+        return None
+
+    try:
+        dt = _parse_date(date_ent, dayfirst=True, fuzzy=True)
+        return dt.day, dt.month, dt.year
+    except Exception as e:
+        print(f"[Warning] Could not parse date “{date_ent}”: {e}")
+        return None
+
+
+def extract_country(text: str) -> str | None:
+    doc = nlp(text)
+    # look for any geopolitical entity
+    ent = next((ent.text for ent in doc.ents if ent.label_ == "GPE"), None)
+    if not ent:
+        print("[Warning] SpaCy did not recognize a country.")
+        return None
+    try:
+        country = pycountry.countries.search_fuzzy(ent)[0]
+        return country.name
+    except LookupError:
+        # fallback: return the raw text
+        print(f"[Warning] Could not map “{ent}” to a known country.")
+        return ent
+
+def extract_amount(text: str) -> float | None:
+    # first try SpaCy MONEY
+    doc = nlp(text)
+    money_ent = next((ent.text for ent in doc.ents if ent.label_ == "MONEY"), None)
+    raw = money_ent or text
+    # strip currency symbols/words and commas
+    cleaned = re.sub(r'[^\d\.]', '', raw.replace(',', ''))
+    try:
+        return float(cleaned)
+    except ValueError:
+        print(f"[Warning] Could not parse amount from “{raw}”.")
+        return None
+
+def extract_number(text: str) -> int | None:
+    doc = nlp(text)
+    ent = next((ent.text for ent in doc.ents if ent.label_ in ("CARDINAL","QUANTITY")), None)
+    if ent:
+        # try digits first
+        m = re.search(r'\d+', ent.replace(',', ''))
+        if m:
+            return int(m.group())
+        # try spelled-out
+        try:
+            return w2n.word_to_num(ent)
+        except Exception:
+            pass
+
+    # fallback
+    m = re.search(r'\d+', text.replace(',', ''))
+    if m:
+        return int(m.group())
+
+    print("[Warning] Could not extract a number.")
+    return None
+
+def extract_yes_no(text: str) -> bool | None:
+    categories = ["yes", "no"]
+    prompt = (
+        f"Which category from the list {categories} fits the sentence "
+        f"'{text}' best? Only reply with the matching category name."
+    )
+
+    # make the LLM request
+    llm_reply = vu.make_llm_request(prompt)
+    print(f"LLM categorized the input as: {llm_reply!r}")
+
+    # find which keyword appeared
+    choice = next((c for c in categories if c in llm_reply.lower()), None)
+    if choice == "yes":
+        return True
+    if choice == "no":
+        return False
+
+    print(f"[Warning] Could not interpret yes/no from LLM reply: {llm_reply!r}")
+    return None
+
+def extract_initials(text: str) -> str | None:
+    matches = re.findall(r'\b[A-Za-z]\b', text) or re.findall(r'[A-Za-z]', text)
+    if matches:
+        initials = '.'.join(letter.upper() for letter in matches) + '.'
+        return initials
+    print("[Warning] Could not extract initials.")
+    return None
+
+def extract_bsn(text: str) -> str:
+    digits = ''.join(ch for ch in text if ch.isdigit())
+    if len(digits) == 9:
+        return digits
+    print(f"[Warning] BSN must be 9 digits. Got: {digits!r}.")
+    return "123456789"
+
+def extract_container(text):
+    types = [
+        "residual waste",
+        "glass",
+        "paper",
+        "textile collection",
+        "textile containers",
+        "organic waste",
+        "bread and pastry waste"
+    ]
+
+    text_lower = text.lower()
+
+    # First, try exact match
+    for t in types:
+        if t in text_lower:
+            return t
+
+     # Fuzzy match against the full types list
+    result = process.extractOne(
+        text_lower,  # input string
+        types,  # list of valid types
+        scorer=fuzz.partial_ratio,
+        score_cutoff=80  # adjust threshold for strictness
+    )
+
 def extract(input_type, text):
     match input_type:
         case INPUT_TYPE.FIRSTNAME:
@@ -101,10 +234,3 @@ def extract(input_type, text):
         case INPUT_TYPE.CONTAINER:
             return extract_container(text)
     return None
-
-
-if __name__ == '__main__':
-    s = "My name is Sarah Connor and I live in Los Angeles."
-    print(extract_firstname(s))
-    print(extract_surname(s))
-    print(extract_place(s))
