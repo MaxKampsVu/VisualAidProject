@@ -7,6 +7,7 @@ import pycountry
 from word2number import w2n
 import voice_util as vu
 from rapidfuzz import process, fuzz
+import datetime
 
 # TODO: download small English language model: python -m spacy download en_core_web_sm
 nlp = spacy.load("en_core_web_sm")
@@ -153,7 +154,7 @@ def extract_yes_no(text: str) -> bool | None:
     )
 
     # make the LLM request
-    llm_reply = vu.make_llm_request(prompt)
+    llm_reply = _make_llm_request(prompt)
     print(f"LLM categorized the input as: {llm_reply!r}")
 
     # find which keyword appeared
