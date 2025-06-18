@@ -84,7 +84,7 @@ def collect_user_data() -> dict[str, any]:
         print(f"[DEBUG] Final country value stored: {country_val}")
 
     h = action_chain.add_action()
-    h.add_prompt_user("Where do you live?")
+    h.add_prompt_user("In which country do you live?")
     h.add_get_user_input(util.INPUT_TYPE.PLACE, store_country)
     h.add_confirm_user_input("Did I understand you correctly, you live in ")
 
