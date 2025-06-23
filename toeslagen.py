@@ -429,7 +429,25 @@ def run_calculation(data: Dict[str, Any]):
 
 if __name__ == "__main__":
     ########## Task 2: Visiting benefit calculator page ###########
-    user_data = collect_user_data()
+    #user_data = collect_user_data()
+    user_data = {
+        "year": 2024,
+        "birth_day": "12",
+        "birth_month": "03",
+        "birth_year": "1990",
+        "country": "Nederland",
+        "basic_rent": 720,
+        "high_savings": False,
+        "has_partner": False,
+        "annual_income": 16000,
+        "monthly_rent": 720,
+        "has_children": False,
+        "has_housemates": False,
+        "lives_in_room": False,
+        "lives_in_group_housing": False,
+        "disability_adjusted_home": False,
+        "pays_service_costs": False,
+    }
     say("Please wait for the calculation...")
     result = run_calculation(user_data)
     say(result)

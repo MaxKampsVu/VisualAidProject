@@ -199,7 +199,7 @@ try:
         response = requests.get("http://localhost:11434/api/models", timeout=2)
         print("[SUCCESS] Llama2 model available")
 
-    print(response)
+    #print(response)
 except requests.RequestException:
     print("[ERROR] Couldn't reach LM studio, did you start it?")
 

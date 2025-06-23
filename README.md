@@ -9,21 +9,31 @@ We have provided three different demos, each focused on a specific task:
 - **Applying for Tax Benefits — `fill_pdf_document.py`**  
   You are guided through the process of completing a Dutch tax form. The system fills out a PDF form that you can submit to the authorities:  
   [Model opgaaf gegevens voor de loonheffingen (LH0082Z)](https://download.belastingdienst.nl/belastingdienst/docs/model_opgaaf_gegevens_loonheffingen_lh0082z11fol.pdf)
+  🎥 [Watch the demo video](demo_videos/fill_pdf_document.mov)
 
 - **Eligibility for Benefits — `toeslagen.py`**  
   You are guided through the Dutch government's official **"Proefberekening Toeslagen"** (benefits eligibility calculator):  
   [Proefberekening Toeslagen](https://www.belastingdienst.nl/wps/wcm/connect/nl/toeslagen/content/hulpmiddel-proefberekening-toeslagen)  
   The assistant collects the necessary personal information and makes a request on your behalf to the website to check your eligibility for healthcare, rental, or child benefits.
+  🎥 [Watch the demo video](demo_videos/toeslagen.mov)
 
 - **Garbage Disposal Directions — `afval.py`**  
   This demo helps you find the nearest garbage disposal containers in Amsterdam using the city's official map:  
   [Afvalcontainers Kaart Amsterdam](https://kaart.amsterdam.nl/afvalcontainers)
+  🎥 [Watch the demo video](demo_videos/afval.mov)
+
 
 > ⚠️ **Note:** As this is a prototype, the full user interaction is not implemented. Some input values are currently hardcoded to demonstrate the system’s functionality.
 
 > ⚠️ **Note:** Voice recognition may not work for certain inputs. When prompted by the system, you can try interacting with the system using personal details like your own **name**, **date of birth**, etc. If your queries are not understood, please fall back on the **example sentences** provided as comments in the demo files.
 
 > ⚠️ **Note:** When prompted to confirm an input (e.g. when asked: "Did I understand you correctly?"), please say "yes you did" or "no you did not". Other answers are not reliably recognized 
+
+### 🎥 Can't run the code?
+
+If you're unable to set up or run the project locally, don't worry!  
+We've included demonstration videos for all three tasks in the [`demo_videos`](demo_videos) folder.  
+These videos show exactly how the system is intended to work.
 
 ## ⚙️ Installation
 
