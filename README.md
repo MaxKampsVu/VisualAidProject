@@ -8,18 +8,18 @@ We have provided three different demos, each focused on a specific task:
 
 - **Applying for Tax Benefits — `fill_pdf_document.py`**  
   You are guided through the process of completing a Dutch tax form. The system fills out a PDF form that you can submit to the authorities:  
-  [Model opgaaf gegevens voor de loonheffingen (LH0082Z)](https://download.belastingdienst.nl/belastingdienst/docs/model_opgaaf_gegevens_loonheffingen_lh0082z11fol.pdf)
+  [Model opgaaf gegevens voor de loonheffingen (LH0082Z)](https://download.belastingdienst.nl/belastingdienst/docs/model_opgaaf_gegevens_loonheffingen_lh0082z11fol.pdf)<br>
   🎥 [Watch the demo video](demo_videos/fill_pdf_document.mov)
 
 - **Eligibility for Benefits — `toeslagen.py`**  
   You are guided through the Dutch government's official **"Proefberekening Toeslagen"** (benefits eligibility calculator):  
   [Proefberekening Toeslagen](https://www.belastingdienst.nl/wps/wcm/connect/nl/toeslagen/content/hulpmiddel-proefberekening-toeslagen)  
-  The assistant collects the necessary personal information and makes a request on your behalf to the website to check your eligibility for healthcare, rental, or child benefits.
+  The assistant collects the necessary personal information and makes a request on your behalf to the website to check your eligibility for healthcare, rental, or child benefits.<br>
   🎥 [Watch the demo video](demo_videos/toeslagen.mov)
 
 - **Garbage Disposal Directions — `afval.py`**  
   This demo helps you find the nearest garbage disposal containers in Amsterdam using the city's official map:  
-  [Afvalcontainers Kaart Amsterdam](https://kaart.amsterdam.nl/afvalcontainers)
+  [Afvalcontainers Kaart Amsterdam](https://kaart.amsterdam.nl/afvalcontainers)<br>
   🎥 [Watch the demo video](demo_videos/afval.mov)
 
 
