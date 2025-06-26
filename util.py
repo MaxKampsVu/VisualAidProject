@@ -1,256 +1,212 @@
-from nameparser import HumanName
-import spacy
-from enum import Enum
-import re
-from dateutil.parser import parse as _parse_date
-import pycountry
-from word2number import w2n
-import voice_util as vu
-from rapidfuzz import process, fuzz
-import datetime
+import speech_recognition as sr
+from gtts import gTTS
+import os
+import requests
+import util
+import platform
+import traceback
 
-# TODO: download small English language model: python -m spacy download en_core_web_sm
-nlp = spacy.load("en_core_web_sm")
+import sys
 
-'''
-Other categories spacey recognizes: 
-PERSON	    People, including fictional
-NORP	    Nationalities, religious groups, political groups
-FAC	        Facilities (buildings, airports, highways, bridges)
-ORG	        Organizations (companies, institutions, agencies)
-GPE	        Geopolitical entities (countries, cities, states)
-LOC	        Non-GPE locations (mountains, bodies of water)
-PRODUCT	    Objects, vehicles, foods, etc. (not services)
-EVENT	    Named events (e.g., "World War II", "Olympics")
-WORK_OF_ART	Titles of books, songs, films, artworks
-LAW	Named   legal documents (e.g., "Constitution", "Treaty of Versailles")
-LANGUAGE	Any named language (e.g., "English", "Mandarin")
-DATE	    Absolute or relative dates (e.g., "July 4th", "two weeks ago")
-TIME	    Specific times (e.g., "2 PM", "three hours")
-PERCENT	    Percentage values (e.g., "50%")
-MONEY	    Monetary values (e.g., "$100", "€1 million")
-QUANTITY	Generic quantities (e.g., "10 kg", "dozen")
-ORDINAL	    position in a sequence (e.g., "first", "second")
-CARDINAL	Numerical values not part of another category (e.g., "one", "2,000")    
-'''
+audio_player = "mpv" 
+environment = "linux"
 
-class INPUT_TYPE(Enum):
-    FIRSTNAME = 0
-    SURNAME = 1
-    PLACE = 2
-    SPELLING = 3
-    BIRTHDATE = 4
-    COUNTRY = 5
-    AMOUNT = 6
-    NUMBER = 8
-    YES_NO = 9
-    INITIALS = 10
-    BSN = 11
-    CONTAINER = 12
+''' config for speech recognition '''
+r = sr.Recognizer()
+pause_threshold_spelling = 2.0 # pauses between words when spelling
+pause_threshold_normal = 1.5 # pauses between words for normal sentences
+timeout = 5 # wait time until user speaks
+phrase_time_limit = 20 # maximum record time
+duration = 5 # record time in seconds
+''' config for gTTS (audio output) '''
+language = 'en'
+''' config for LLM '''
+MODEL_NAME = "google/gemma-3-1b"
+url = "http://localhost:1234/v1/chat/completions"
+headers = {
+   "Content-Type": "application/json",
+  "Authorization": "Bearer lm-studio"
+}
 
-    def format(self, data):
-        match self:
-            case INPUT_TYPE.AMOUNT:
-                return str(data) + ' euros'
-            case INPUT_TYPE.BSN:
-                # make sure the digits are spelled out individually
-                return ' '.join(data[i] for i in range(len(data)))
-            case INPUT_TYPE.YES_NO:
-                return 'yes' if data else 'no'
-            case INPUT_TYPE.SPELLING:
-                # add spelling read back if the user spelled it out
-                text = data + ', spelled ' + ' '.join(data[i] for i in range(len(data)))
-                return text
-            case INPUT_TYPE.BIRTHDATE:
-                date = datetime.date(data[2], data[1], data[0])
-                return date.strftime('%B %d %Y')
-            case _:
-                return str(data)
+if sys.platform.startswith("linux"):
+    print("Running on Linux")
+elif sys.platform == "darwin":
+    print("Running on macOS")
+    audio_player = "afplay"
+    environment = "mac"
 
-def extract_firstname(text):
-    doc = nlp(text)
-    person = next((ent.text for ent in doc.ents if ent.label_ == "PERSON"), None)
-    if person is None:
-        print("[Warning] Spacey did not recognize answer.")
-        return None
-    name = HumanName(person)
-    return name.first
+    ### Differnt model (llama2) request
+    MODEL_NAME = "llama2"
+    url = "http://localhost:11434/api/generate"
+    headers = {
+        "Content-Type": "application/json"
+    }
+else:
+    print(f"Running on unknown platform: {sys.platform}")
 
-def extract_surname(text):
-    doc = nlp(text)
-    person = next((ent.text for ent in doc.ents if ent.label_ == "PERSON"), None)
-    if person is None:
-        print("[Warning] Spacey did not recognize answer.")
-        return None
-    name = HumanName(person)
-    return name.surnames
+### Helper methods
 
-def extract_place(text):
-    doc = nlp(text)
-    place = next((ent.text for ent in doc.ents if ent.label_ == "GPE"), None)
-    if place is None:
-        print("[Warning] Spacey did not recognize answer.")
-    return place
+def make_llm_request(prompt):
+    if environment == "mac":
+        data = {
+            "model": MODEL_NAME,
+            "prompt": prompt,
+            "stream": False,  # Set to True if you want streamed output
+            "temperature": 0.7
+        }
 
-def extract_spelling(text):
-    match = re.search(r'\b(?:[A-Za-z]\s+){1,}[A-Za-z]\b', text)
-    if match:
-        letters = match.group().split()
-        return ''.join(letters).lower()
-    return None
-
-def extract_birthdate(text: str) -> tuple[int, int, int] | None:
-    """Return (day, month, year) as ints, or None if not recognized."""
-    doc = nlp(text)
-    date_ent = next((ent.text for ent in doc.ents if ent.label_ == "DATE"), None)
-    if not date_ent:
-        print("[Warning] SpaCy did not recognize a date.")
-        return None
-
-    try:
-        dt = _parse_date(date_ent, dayfirst=True, fuzzy=True)
-        return dt.day, dt.month, dt.year
-    except Exception as e:
-        print(f"[Warning] Could not parse date “{date_ent}”: {e}")
-        return None
+        response = requests.post(url, headers=headers, json=data)
+        return response.json()["response"]
+    else:
+        data = {
+            "model": f"{MODEL_NAME}",
+            "messages": [
+                {"role": "user", "content": f"{prompt}"},
+            ],
+            "temperature": 0.7
+        }
+        request = requests.post(url, headers=headers, json=data)
+        print(request.json())
+        return request.json()["choices"][0]["message"]["content"]
 
 
-def extract_country(text: str) -> str | None:
-    doc = nlp(text)
-    # look for any geopolitical entity
-    ent = next((ent.text for ent in doc.ents if ent.label_ == "GPE"), None)
-    if not ent:
-        print("[Warning] SpaCy did not recognize a country.")
-        return None
-    try:
-        country = pycountry.countries.search_fuzzy(ent)[0]
-        return country.name
-    except LookupError:
-        # fallback: return the raw text
-        print(f"[Warning] Could not map “{ent}” to a known country.")
-        return ent
 
-def extract_amount(text: str) -> float | None:
-    # first try SpaCy MONEY
-    doc = nlp(text)
-    money_ent = next((ent.text for ent in doc.ents if ent.label_ == "MONEY"), None)
-    raw = money_ent or text
-    # strip currency symbols/words and commas
-    cleaned = re.sub(r'[^\d\.]', '', raw.replace(',', ''))
-    try:
-        return float(cleaned)
-    except ValueError:
-        print(f"[Warning] Could not parse amount from “{raw}”.")
-        return None
-
-def extract_number(text: str) -> int | None:
-    doc = nlp(text)
-    ent = next((ent.text for ent in doc.ents if ent.label_ in ("CARDINAL","QUANTITY")), None)
-    if ent:
-        # try digits first
-        m = re.search(r'\d+', ent.replace(',', ''))
-        if m:
-            return int(m.group())
-        # try spelled-out
-        try:
-            return w2n.word_to_num(ent)
-        except Exception:
-            pass
-
-    # fallback
-    m = re.search(r'\d+', text.replace(',', ''))
-    if m:
-        return int(m.group())
-
-    print("[Warning] Could not extract a number.")
-    return None
-
-def extract_yes_no(text: str) -> bool | None:
-    categories = ["yes", "no"]
-    prompt = (
-        f"Which category from the list {categories} fits the sentence "
-        f"'{text}' best? Only reply with the matching category name."
-    )
-
-    # make the LLM request
-    llm_reply = vu.make_llm_request(prompt)
-    print(f"LLM categorized the input as: {llm_reply!r}")
-
-    # find which keyword appeared
-    choice = next((c for c in categories if c in llm_reply.lower()), None)
-    if choice == "yes":
-        return True
-    if choice == "no":
-        return False
-
-    print(f"[Warning] Could not interpret yes/no from LLM reply: {llm_reply!r}")
-    return None
-
-def extract_initials(text: str) -> str | None:
-    matches = re.findall(r'\b[A-Za-z]\b', text) or re.findall(r'[A-Za-z]', text)
-    if matches:
-        initials = '.'.join(letter.upper() for letter in matches) + '.'
-        return initials
-    print("[Warning] Could not extract initials.")
-    return None
-
-def extract_bsn(text: str) -> str:
-    digits = ''.join(ch for ch in text if ch.isdigit())
-    if len(digits) == 9:
-        return digits
-    print(f"[Warning] BSN must be 9 digits. Got: {digits!r}.")
-    return "123456789"
-
-def extract_container(text):
-    types = [
-        "residual waste",
-        "glass",
-        "paper",
-        "textile collection",
-        "textile containers",
-        "organic waste",
-        "bread and pastry waste"
-    ]
-
+def _contains_word(text, word_list):
+    """
+    Check if text contains a word from word_list
+    :param text:
+    :param word_list:
+    :return: a word from word_list or None
+    """
     text_lower = text.lower()
-
-    # First, try exact match
-    for t in types:
-        if t in text_lower:
-            return t
-
-     # Fuzzy match against the full types list
-    result = process.extractOne(
-        text_lower,  # input string
-        types,  # list of valid types
-        scorer=fuzz.partial_ratio,
-        score_cutoff=80  # adjust threshold for strictness
-    )
-
-def extract(input_type, text):
-    match input_type:
-        case INPUT_TYPE.FIRSTNAME:
-            return extract_firstname(text)
-        case INPUT_TYPE.SURNAME:
-            return extract_surname(text)
-        case INPUT_TYPE.PLACE:
-            return extract_place(text)
-        case INPUT_TYPE.SPELLING:
-            return extract_spelling(text)
-        case INPUT_TYPE.BIRTHDATE:
-            return extract_birthdate(text)
-        case INPUT_TYPE.COUNTRY:
-            return extract_country(text)
-        case INPUT_TYPE.AMOUNT:
-            return extract_amount(text)
-        case INPUT_TYPE.NUMBER:
-            return extract_number(text)
-        case INPUT_TYPE.YES_NO:
-            return extract_yes_no(text)
-        case INPUT_TYPE.INITIALS:
-            return extract_initials(text)
-        case INPUT_TYPE.BSN:
-            return extract_bsn(text)
-        case INPUT_TYPE.CONTAINER:
-            return extract_container(text)
+    for word in word_list:
+        if word.lower() in text_lower:
+            return word
     return None
+
+### Methods to get speak to the user and get input from user voice
+def _record_user(input_type):
+    if input_type == util.INPUT_TYPE.SPELLING:
+        r.pause_threshold = pause_threshold_spelling
+    else:
+        r.pause_threshold = pause_threshold_normal
+
+    with sr.Microphone() as source:
+        r.adjust_for_ambient_noise(source, duration=0.25)
+        print("Listening...")
+        return r.listen(source, timeout=timeout, phrase_time_limit=phrase_time_limit)
+
+def say(message):
+    """
+    play a message as audio
+    :param message:
+    :return:
+    """
+    print("Talking... ")
+    message_obj = gTTS(text=message, lang=language, slow=False)
+    message_obj.save("message.mp3")
+    null_device = "nul" if platform.system() == "Windows" else "/dev/null" # Redirect audio_player console printing
+    os.system(f"{audio_player} message.mp3 > {null_device} 2>&1")
+
+
+
+def get_user_input(input_type):
+    """
+    Get user input from voice, the input is extracted based on user_input_type
+    :param input_type:
+    :return:
+    """
+    # Record user request
+    user_input = None
+    r = sr.Recognizer()
+
+    while user_input is None:
+        try:
+            audio_text = _record_user(input_type)
+
+            print("Processing input...")
+            spoken_text = r.recognize_google(audio_text)
+            print(f"Recorded user input: {spoken_text}")
+
+            user_input = util.extract(input_type, spoken_text)
+            print(f"Extracted input: '{user_input}' for type '{input_type}'")
+
+        except sr.WaitTimeoutError:
+            print("[Timeout] No speech detected within the timeout period.")
+        except sr.UnknownValueError:
+            print("[Warning] Could not understand the audio.")
+        except sr.RequestError as e:
+            print("[Error] Could not reach the speech recognition service.")
+            print(f"Details: {e}")
+        except Exception as e:
+            print("[Unexpected Error] while processing user input:")
+            traceback.print_exc()
+        if user_input is None:
+            say("I didn't understand that. Please try again.")
+
+    return user_input
+
+def categorize_user_input(categories):
+    """
+    Categorize the user input from voice using LLM and a list of predefined categories.
+
+    :param categories: list[str] - predefined category options
+    :return: str - the matched category
+    """
+    category = None
+    r = sr.Recognizer()
+
+    while category is None:
+        try:
+            audio_text = _record_user(None)
+
+            print("Processing input...")
+            user_input = r.recognize_google(audio_text)
+            print(f"Recorded user input: {user_input}")
+
+            prompt = (
+                f"Which category from the list {categories} fits the sentence: "
+                f"'{user_input}' the best? Only reply with the matching category name."
+            )
+            llm_reply = make_llm_request(prompt)
+            print(f"LLM categorized the input as: {llm_reply}")
+
+            category = _contains_word(llm_reply, categories)
+
+        except sr.UnknownValueError:
+            print("[Warning] Could not understand the audio.")
+        except sr.RequestError as e:
+            print("[Error] Could not reach the speech recognition service.")
+            print(f"Details: {e}")
+        except Exception as e:
+            print("[Unexpected Error] while categorizing user input:")
+            traceback.print_exc()
+
+        if category is None:
+            say("I didn't understand that. Please try again.")
+
+    return category
+
+
+
+try:
+    # Check if LM Studio is running by sending a request
+    if environment == "linux":
+        response = requests.get("http://localhost:1234", timeout=2)
+        print("[SUCCESS] LM studio online")
+    elif environment == "mac":
+        # Check for llama2 model availability
+        response = requests.get("http://localhost:11434/api/models", timeout=2)
+        print("[SUCCESS] Llama2 model available")
+
+    #print(response)
+except requests.RequestException:
+    print("[ERROR] Couldn't reach LM studio, did you start it?")
+
+
+
+
+
+
+
+

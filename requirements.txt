@@ -16,3 +16,7 @@ annotated-types
 pydantic
 pydantic_core
 rapidfuzz
+opencv-python
+easyocr
+pillow
+pytesseract

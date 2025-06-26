@@ -147,6 +147,3 @@ class ActionChain:
     def run(self):
         if self._head is not None:
             self._head.run()
-
-
-
