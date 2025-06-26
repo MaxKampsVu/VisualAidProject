@@ -202,11 +202,3 @@ try:
     #print(response)
 except requests.RequestException:
     print("[ERROR] Couldn't reach LM studio, did you start it?")
-
-
-
-
-
-
-
-

@@ -96,15 +96,27 @@ def collect_user_data() -> dict[str, any]:
     h.add_confirm_user_input("Did I understand you correctly, you live in ")
 
     # — Ask for basic rent — ---------------------------------------------
-    rent_val: int | None = None
+    def additional_info(v):
+        additional_info = bool(v)
+        print(f"[DEBUG] User requested additional information: {'Yes' if v else 'No'}")
+        if additional_info:
+            say("The base rent is the rent excluding any service charges. "
+            "Check the amount in your lease agreement or in the letter from your landlord "
+            "about the annual rent increase. If you live in a mobile home, add the site-fee rent.")
+
+    rent_val: int | bool | None = None
     def store_rent(v):
-        nonlocal rent_val
-        rent_val = v
-        data["basic_rent"] = rent_val or 0
-        print(f"[DEBUG] Stored basic rent: €{rent_val}")
+            nonlocal rent_val
+            rent_val = v
+            data["basic_rent"] = rent_val or 0
+            print(f"[DEBUG] Stored basic rent: €{rent_val}")
 
     h = action_chain.add_action()
-    h.add_prompt_user('How much basic rent do you pay per month in euros?')
+    h.add_prompt_user('The next question is regarding your basic rent. There is additional information available. Do you want to receive additional information?')
+    h.add_get_user_input(util.INPUT_TYPE.YES_NO, additional_info)
+
+    h = action_chain.add_action()
+    h.add_prompt_user("Please tell me your basic rent in euros.")
     h.add_get_user_input(util.INPUT_TYPE.AMOUNT, store_rent)
     h.add_confirm_user_input("Did I understand you correctly, your basic rent is ")
 
@@ -429,25 +441,7 @@ def run_calculation(data: Dict[str, Any]):
 
 if __name__ == "__main__":
     ########## Task 2: Visiting benefit calculator page ###########
-    #user_data = collect_user_data()
-    user_data = {
-        "year": 2024,
-        "birth_day": "12",
-        "birth_month": "03",
-        "birth_year": "1990",
-        "country": "Nederland",
-        "basic_rent": 720,
-        "high_savings": False,
-        "has_partner": False,
-        "annual_income": 16000,
-        "monthly_rent": 720,
-        "has_children": False,
-        "has_housemates": False,
-        "lives_in_room": False,
-        "lives_in_group_housing": False,
-        "disability_adjusted_home": False,
-        "pays_service_costs": False,
-    }
+    user_data = collect_user_data()
     say("Please wait for the calculation...")
     result = run_calculation(user_data)
     say(result)

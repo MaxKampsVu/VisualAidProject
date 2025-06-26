@@ -4,6 +4,11 @@ import util
 import action_chain
 from voice_util import say
 
+import cv2
+import re
+import time
+import easyocr
+
 # ---------------------------------------------------------------------------
 #   Configurations
 # ---------------------------------------------------------------------------
@@ -20,6 +25,7 @@ def collect_pdf_user_data() -> dict[str, any]:
 
     say("Welcome to the Dutch wage tax form assistant. Let’s collect just a few details to fill out your pdf form.")
     data: dict[str, any] = {}
+
     # --- last-name (spelled) ----------------------------------
     def store_last_name(val: str):
         data["_lastname"] = val.lower().capitalize()
@@ -29,7 +35,6 @@ def collect_pdf_user_data() -> dict[str, any]:
     h.add_prompt_user("Please spell your last name.")
     h.add_get_user_input(util.INPUT_TYPE.SPELLING, store_last_name)
     h.add_confirm_user_input("Did I understand you correctly, your last name is ")
-
 
     # --- initials ---------------------------------------------
     def store_initials(val: str):
@@ -41,15 +46,49 @@ def collect_pdf_user_data() -> dict[str, any]:
     h.add_get_user_input(util.INPUT_TYPE.INITIALS, store_initials)
     h.add_confirm_user_input("Did I understand you correctly, your initials are ")
     
-    # --- BSN ---------------------------------------------------
+    # --- BSN (voice vs. camera) --------------------------------------
     def store_bsn(val: str):
+        data["1_BSN"] = val
+        print(f"[DEBUG] BSN → {val}")
+
+    def choose_bsn_method(choice: str):
+        mode = choice.strip().lower()
+        if mode == "camera":
+            say("I am now opening the camera.")
+            try:
+                bsn = read_bsn_from_camera()
+                if bsn is None:
+                    h = action_chain.add_action()
+                    h.add_get_user_input(util.INPUT_TYPE.BSN, store_bsn)
+                    h.add_confirm_user_input("Did I understand you correctly, your BSN is ")
+                    action_chain.run()
+                else:
+                    data["1_BSN"] = str(bsn)
+                    print(f"[DEBUG] BSN → {bsn}")
+                    return
+            except Exception as e:
+                say(f"Camera OCR failed: {e}. Please say your BSN instead.")
+
+        h = action_chain.add_action()
+        h.add_get_user_input(util.INPUT_TYPE.BSN, store_bsn)
+        h.add_confirm_user_input("Did I understand you correctly, your BSN is ")
+        action_chain.run()
+
+    # ask which input method
+    h = action_chain.add_action()
+    h.add_prompt_user("Would you like to speak your BSN or show it to the camera?")
+    h.add_get_user_input(util.INPUT_TYPE.VOICE_CAMERA, choose_bsn_method)
+    
+
+    # Old version using only voice input
+    '''def store_bsn(val: str):
         data["1_BSN"] = val
         print(f"[DEBUG] BSN → {val}")
 
     h = action_chain.add_action()
     h.add_prompt_user("What are the 9-digits of your BSN number?")
     h.add_get_user_input(util.INPUT_TYPE.BSN, store_bsn)
-    h.add_confirm_user_input("Did I understand you correctly, your BSN is ")
+    h.add_confirm_user_input("Did I understand you correctly, your BSN is ")'''
 
     # --- §2a  (loonheffings-korting) ---------------------------
     def store_q2a(val: bool):
@@ -120,6 +159,49 @@ def _set_checkbox(annot, want_label):
         return True
     return False
 
+def read_bsn_from_camera(attempts: int = 3, delay: int = 3) -> str:
+    reader = easyocr.Reader(['en'], gpu=False)
+    cap = cv2.VideoCapture(0)
+
+    try:
+        # Take three attempts to read the BSN from the camera
+        for attempt in range(1, attempts + 1):
+            say(f"Attempt {attempt} of {attempts}. Please hold your BSN document in front of the camera. You have {delay} seconds.")
+            
+            # Wait to let the user position the document
+            for i in range(delay, 0, -1):
+                say(f"{i}")
+                time.sleep(1)
+            say("I am capturing the image now.")
+            ret, frame = cap.read()
+            if not ret:
+                say("Sorry, I could not capture an image from the camera. Let's try again.")
+                continue
+
+            # Take a temporary file to save the image and process it
+            temp_file = "bsn_image/bsn_camera_temp.png"
+            cv2.imwrite(temp_file, frame)
+            result = reader.readtext(temp_file, detail=0)
+            detected_text = ''.join(result).replace(' ', '')
+            numbers = re.findall(r'\d{9}', detected_text)
+            print(f"[DEBUG] Detected text: {numbers}")    
+    
+            # If 9-digit number found save it, otherwise retry
+            if numbers:
+                bsn = numbers[0]
+                digits_spoken = " ".join(bsn) 
+                say(f"Your BSN is: {digits_spoken}.")
+                return bsn
+            else:
+                say("I could not find a 9-digit number. Let's try again.")
+
+        cap.release()
+        say("I could not detect your BSN after 3 attempts. Please say your BSN instead.")
+        return None
+    except Exception as e:
+        say(f"An error occurred while reading the BSN from the camera: {e}")
+        cap.release()
+        raise e
 
 # ---------------------------------------------------------------------------
 #   MAIN PDF FILLER

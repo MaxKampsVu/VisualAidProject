@@ -10,6 +10,7 @@ import util
 from voice_util import say
 
 import selenium
+import googlemaps
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.ui import Select, WebDriverWait
@@ -51,7 +52,7 @@ def ask(question: str, input_type: util.INPUT_TYPE) -> Any:
 def collect_user_data() -> Dict[str, Any]:
     say("Welcome to the Dutch Waste container map service. Let’s collect just a few details and find a container near you for your waste.")
     data: dict[str, any] = {}
-
+    
     # — Ask for Address — ----------------------------------------------------
     address: str | None = None
     def store_address(v):
@@ -64,6 +65,7 @@ def collect_user_data() -> Dict[str, Any]:
     h.add_prompt_user("Please spell the name of your street?")
     h.add_get_user_input(util.INPUT_TYPE.SPELLING, store_address)
     h.add_confirm_user_input("Did I understand you correctly, the name of your street is ")
+    data["address"] = "Hectorstraat 28"
     
     stNumber: int | None = None
     def store_stNumber(v):
@@ -107,7 +109,7 @@ def collect_user_data() -> Dict[str, Any]:
     return data
 
 # ------------------------------------------------------------------
-#   Browser-automation helpers
+#   Browser-automation helpers & utilities
 # ------------------------------------------------------------------
 def wait_click(wait: WebDriverWait, locator: Tuple[str, str]):
     el = wait.until(EC.element_to_be_clickable(locator))
@@ -218,12 +220,60 @@ def find_bin(driver: webdriver.Chrome, data: Dict[str, Any]) -> str:
     address_element = wait.until(EC.presence_of_element_located((By.XPATH, "(//input[@class='tactile-searchbox-input'])[2]")))
     address_text = address_element.get_attribute("aria-label")
     address_text = address_text.replace("Bestemming", "").strip()
-    return f"The nearest waste container for {data['container']} is located at {address_text}."
+
+    # Get the distance and duration from the waste container to the user's address
+    distance, duration = get_route_info(driver, data["address"], address_text)
+    address_text_short = ','.join(address_text.split(',')[:2]).strip()
+
+    result = f"I found a container at {address_text_short}, which is {distance} away. It takes about {duration} by foot)."
+    say(result)
+    print("[DEBUG] Result:", result)
+
+    # Open Google Maps with the route to the waste container
+    say("I will now start the route to this waste container for you on Google Maps.")
+    maps_url = build_maps_url(data["address"], address_text)
+    driver.get(maps_url)
+
+# ------------------------------------------------------------------
+#  Build a Google Maps directions URL
+# ------------------------------------------------------------------
+def build_maps_url(origin: str, destination: str) -> str:
+    from urllib.parse import quote_plus
+    o = quote_plus(origin)
+    d = quote_plus(destination)
+    return f"https://www.google.com/maps/dir/?api=1&origin={o}&destination={d}&travelmode=walking"
+
+# ------------------------------------------------------------------
+#  Scrape distance & duration from Google Maps page
+# ------------------------------------------------------------------
+def get_route_info(driver: webdriver.Chrome, origin: str, destination: str) -> Tuple[str, str]:
+    wait = WebDriverWait(driver, DEFAULT_TIMEOUT)
+    # navigate to Maps directions
+    maps_url = build_maps_url(origin, destination)
+    driver.get(maps_url)
+
+    # wait for the first route card
+    card = wait.until(EC.visibility_of_element_located((
+        By.XPATH,
+        "//div[starts-with(@id,'section-directions-trip-0')]"
+    )))
+
+    route_div = card.find_element(By.CSS_SELECTOR, "div.XdKEzd")
+    info_divs = route_div.find_elements(By.TAG_NAME, "div")
+    if len(info_divs) < 2:
+        raise RuntimeError(f"Unexpected structure under XdKEzd: only {len(info_divs)} divs found")
+
+    # 4) first div is duration, second is distance
+    duration = card.find_element(By.CSS_SELECTOR, "div.XdKEzd > div.Fk3sm").text       
+    distance = card.find_element(By.CSS_SELECTOR, "div.XdKEzd > div.ivN21e").text
+
+    return distance, duration
 # ------------------------------------------------------------------
 #   Run
 # ------------------------------------------------------------------
 def run_calculation(data: Dict[str, Any]) -> str:
     opts = Options()
+    opts.add_experimental_option("detach", True)
     if CHROME_HEADLESS:
         opts.add_argument("--headless=new")
 
@@ -245,11 +295,8 @@ def run_calculation(data: Dict[str, Any]) -> str:
         return result
     finally:
         time.sleep(3)
-        driver.quit()
 
 if __name__ == '__main__':
     ########## Task 3: Finding nearest bin ###########
     user_data = collect_user_data()
-    result = run_calculation(user_data)
-    say(result)
-    print("Result:", result)
+    run_calculation(user_data)
